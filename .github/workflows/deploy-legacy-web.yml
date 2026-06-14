@@ -56,6 +56,20 @@ jobs:
             /p:DeleteExistingFiles=True `
             /p:publishUrl=$publishDir `
             /m
+          # Some MSBuild/VS versions emit the site to the package staging folder
+          # instead of publishUrl. Fall back to PackageTmp if needed.
+          if (-not (Test-Path (Join-Path $publishDir 'Web.config'))) {
+            $projDir = Split-Path $env:PROJECT_PATH -Parent
+            $packageTmp = Join-Path $projDir 'obj\Release\Package\PackageTmp'
+            if (Test-Path (Join-Path $packageTmp 'Web.config')) {
+              Write-Host "publishUrl was empty; copying from $packageTmp"
+              New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
+              Copy-Item -Path (Join-Path $packageTmp '*') -Destination $publishDir -Recurse -Force
+            }
+          }
+          if (-not (Test-Path (Join-Path $publishDir 'Web.config'))) {
+            throw "Published site not found (no Web.config in $publishDir)."
+          }
           "PUBLISH_DIR=$publishDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Upload site artifact

@@ -1,0 +1,22 @@
+@model OgeFieldOps.Web.Models.UploadViewModel
+@{
+    ViewBag.Title = "Upload document";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Upload document</h2>
+<p class="text-muted">Outage <strong>@Model.TicketNumber</strong></p>
+
+@using (Html.BeginForm("Upload", "Outages", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.OutageId)
+    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+    <div class="form-group">
+        <label for="document">File</label>
+        <input type="file" name="document" id="document" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Upload</button>
+    @Html.ActionLink("Cancel", "Details", new { id = Model.OutageId }, new { @class = "btn btn-link" })
+}

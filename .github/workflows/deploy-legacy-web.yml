@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'legacy-upload-demo/LegacyUploadDemo.Web/**'
+      - 'legacy-upload-demo/OgeFieldOps.Web/**'
       - '.github/workflows/deploy-legacy-web.yml'
       - 'scripts/deploy-iis.ps1'
 
@@ -18,44 +18,78 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PROJECT_PATH: legacy-upload-demo/LegacyUploadDemo.Web/LegacyUploadDemo.Web.csproj
-  IIS_SITE_NAME: LegacyUploadDemo
-  IIS_APP_POOL: LegacyUploadDemo
-  IIS_SITE_PATH: C:\inetpub\wwwroot\LegacyUploadDemo
+  PROJECT_PATH: legacy-upload-demo/OgeFieldOps.Web/OgeFieldOps.Web.csproj
+  PACKAGES_CONFIG: legacy-upload-demo/OgeFieldOps.Web/packages.config
+  PACKAGES_DIR: legacy-upload-demo/packages
+  IIS_SITE_NAME: OgeFieldOps
+  IIS_APP_POOL: OgeFieldOps
+  IIS_SITE_PATH: C:\inetpub\wwwroot\OgeFieldOps
   IIS_BINDING_PORT: '80'
+  DATA_ROOT: C:\OGE
 
 jobs:
+  build:
+    name: Build (MSBuild, .NET Framework 4.8)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Restore NuGet packages
+        shell: pwsh
+        run: nuget restore $env:PACKAGES_CONFIG -PackagesDirectory $env:PACKAGES_DIR
+
+      - name: Build and publish (FileSystem)
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:RUNNER_TEMP 'oge-site'
+          msbuild $env:PROJECT_PATH `
+            /p:Configuration=Release `
+            /p:DeployOnBuild=true `
+            /p:WebPublishMethod=FileSystem `
+            /p:DeleteExistingFiles=True `
+            /p:publishUrl=$publishDir `
+            /m
+          "PUBLISH_DIR=$publishDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: oge-site
+          path: ${{ env.PUBLISH_DIR }}
+          if-no-files-found: error
+
   deploy:
-    name: Publish and deploy to IIS
+    name: Deploy to IIS (self-hosted)
+    needs: build
     runs-on:
       - self-hosted
       - Windows
       - X64
       - iis-deploy
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
         with:
-          dotnet-version: 10.0.x
-
-      - name: Publish web app
-        shell: powershell
-        run: |
-          $publishDir = Join-Path $env:RUNNER_TEMP 'legacy-upload-demo-publish'
-          "PUBLISH_DIR=$publishDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          dotnet restore $env:PROJECT_PATH
-          dotnet publish $env:PROJECT_PATH --configuration Release --no-restore --output $publishDir
+          name: oge-site
+          path: ${{ runner.temp }}\oge-site
 
       - name: Deploy to IIS
         shell: powershell
         run: |
           ./scripts/deploy-iis.ps1 `
-            -PublishPath $env:PUBLISH_DIR `
+            -PublishPath "$env:RUNNER_TEMP\oge-site" `
             -SiteName $env:IIS_SITE_NAME `
             -AppPoolName $env:IIS_APP_POOL `
             -SitePath $env:IIS_SITE_PATH `
-            -BindingPort ([int]$env:IIS_BINDING_PORT)
+            -BindingPort ([int]$env:IIS_BINDING_PORT) `
+            -DataRoot $env:DATA_ROOT

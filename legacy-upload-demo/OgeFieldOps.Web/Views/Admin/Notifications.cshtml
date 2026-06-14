@@ -1,0 +1,24 @@
+@model System.Collections.Generic.IEnumerable<OgeFieldOps.Web.Controllers.NotificationFileInfo>
+@{
+    ViewBag.Title = "Dispatch Notifications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Dispatch Notifications</h2>
+<p class="text-muted">Messages dropped to the SMTP pickup directory: <code>@ViewBag.PickupDirectory</code></p>
+
+@foreach (var m in Model)
+{
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <strong>@m.FileName</strong>
+            <span class="pull-right text-muted">@m.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC &middot; @((m.SizeBytes / 1024.0).ToString("N1")) KB</span>
+        </div>
+        <div class="panel-body"><pre style="margin:0;">@m.Preview</pre></div>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No notifications have been generated yet.</div>
+}

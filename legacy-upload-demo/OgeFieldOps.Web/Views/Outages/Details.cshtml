@@ -1,0 +1,45 @@
+@model OgeFieldOps.Web.Models.OutageRecord
+@{
+    ViewBag.Title = "Outage " + Model.TicketNumber;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var documents = ViewBag.Documents as System.Collections.Generic.IList<OgeFieldOps.Web.Models.OutageDocument>;
+}
+
+<h2>Outage @Model.TicketNumber</h2>
+@Html.ActionLink("Back to list", "Index", "Outages", null, new { @class = "btn btn-link" })
+
+<dl class="dl-horizontal">
+    <dt>Region</dt><dd>@Model.Region</dd>
+    <dt>Cause</dt><dd>@Model.Cause</dd>
+    <dt>Status</dt><dd>@Model.Status</dd>
+    <dt>Customers affected</dt><dd>@Model.CustomersAffected.ToString("N0")</dd>
+    <dt>Reported</dt><dd>@Model.ReportedAt.ToString("yyyy-MM-dd HH:mm") by @Model.ReportedBy</dd>
+    <dt>Restored</dt><dd>@(Model.RestoredAt.HasValue ? Model.RestoredAt.Value.ToString("yyyy-MM-dd HH:mm") : "—")</dd>
+</dl>
+
+<h3>Documents</h3>
+@Html.ActionLink("Upload document", "Upload", new { id = Model.Id }, new { @class = "btn btn-default btn-sm" })
+
+<table class="table table-striped">
+    <thead>
+        <tr><th>File</th><th class="text-right">Size</th><th>Uploaded</th><th>By</th></tr>
+    </thead>
+    <tbody>
+        @if (documents == null || documents.Count == 0)
+        {
+            <tr><td colspan="4" class="text-muted">No documents uploaded.</td></tr>
+        }
+        else
+        {
+            foreach (var d in documents)
+            {
+                <tr>
+                    <td>@d.FileName</td>
+                    <td class="text-right">@((d.SizeBytes / 1024.0).ToString("N1")) KB</td>
+                    <td>@d.UploadedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@d.UploadedBy</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

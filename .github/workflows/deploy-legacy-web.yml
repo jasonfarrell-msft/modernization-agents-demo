@@ -54,6 +54,7 @@ jobs:
             /p:DeployOnBuild=true `
             /p:WebPublishMethod=FileSystem `
             /p:DeleteExistingFiles=True `
+            /p:AutoParameterizationWebConfigConnectionStrings=False `
             /p:publishUrl=$publishDir `
             /m
           # Some MSBuild/VS versions emit the site to the package staging folder

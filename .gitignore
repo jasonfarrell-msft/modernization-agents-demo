@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+.env.*
+!.env.example
 
 # User-specific files
 *.rsuser
@@ -34,6 +36,15 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+
+# Local demo data
+*.db
+*.db-shm
+*.db-wal
+
+# Generated infra parameters can contain secrets; use .bicepparam + environment/GitHub secrets.
+infra/**/*.parameters.json
+infra/**/*.json
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

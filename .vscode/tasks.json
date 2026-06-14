@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "verify-az",
+			"type": "shell",
+			"command": "cd /Users/jasonfarrell/Projects/modernization-demo/infra/legacy && /bin/echo hello && /bin/which az || true",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

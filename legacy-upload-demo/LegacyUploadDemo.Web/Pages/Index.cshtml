@@ -1,0 +1,83 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Legacy Upload Demo";
+}
+
+<div class="hero-shell">
+    <section class="hero-card">
+        <p class="eyebrow">OGE modernization story</p>
+        <h1>Legacy file upload flow, now visible in a real web experience.</h1>
+        <p class="lede">This page demonstrates the legacy path in a way that is easy to see and easy to test: uploads are saved to disk, a local SQLite record is created, and the page refreshes with the current demo snapshot.</p>
+    </section>
+
+    <section class="panel-grid">
+        <article class="panel-card demo-panel">
+            <div class="panel-heading">
+                <p class="panel-kicker">Demo controls</p>
+                <h2>Upload a file and watch the legacy flow run</h2>
+            </div>
+            <form method="post" enctype="multipart/form-data" class="upload-form" data-testid="upload-form">
+                <label for="file" class="field-label">Choose a file to save locally</label>
+                <input id="file" asp-for="Upload" type="file" class="file-input" data-testid="upload-input" />
+                <button type="submit" class="action-button" data-testid="save-upload-button">Save upload</button>
+            </form>
+            <div class="mini-grid">
+                <span class="mini-chip">Local filesystem</span>
+                <span class="mini-chip">SQLite event record</span>
+                <span class="mini-chip">Visible refresh state</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+            {
+                <p class="status-box" data-testid="status-box" aria-live="polite">@Model.StatusMessage</p>
+            }
+        </article>
+
+        <article class="panel-card demo-panel">
+            <div class="panel-heading">
+                <p class="panel-kicker">Current snapshot</p>
+                <h2>What the demo is tracking right now</h2>
+            </div>
+            <ul class="info-list" data-testid="snapshot-list">
+                <li><strong>Upload directory:</strong> @Model.Snapshot.UploadDirectory</li>
+                <li><strong>Stored files:</strong> @Model.Snapshot.Files.Count</li>
+                <li><strong>Database records:</strong> @Model.Snapshot.DatabaseRecordCount</li>
+                <li><strong>Database status:</strong> @Model.Snapshot.DatabaseStatus</li>
+            </ul>
+        </article>
+    </section>
+
+    <section class="panel-grid two-up">
+        <article class="panel-card demo-panel">
+            <div class="panel-heading">
+                <p class="panel-kicker">Why this is useful</p>
+                <h2>What the audience can observe</h2>
+            </div>
+            <ul class="feature-list">
+                <li>Files are saved to a meaningful local path that can be inspected after each upload.</li>
+                <li>Each upload inserts a visible SQLite event record, which makes the backend behavior tangible.</li>
+                <li>The refreshed snapshot gives a clear before/after story for modernization demos.</li>
+            </ul>
+        </article>
+
+        <article class="panel-card demo-panel">
+            <div class="panel-heading">
+                <p class="panel-kicker">Recent uploads</p>
+                <h2>Latest files on disk</h2>
+            </div>
+            @if (Model.Snapshot.Files.Count == 0)
+            {
+                <p class="muted" data-testid="empty-state">No files have been uploaded yet. Use the form above to create the first visible demo artifact.</p>
+            }
+            else
+            {
+                <ul class="file-list" data-testid="file-list">
+                    @foreach (var fileName in Model.Snapshot.Files)
+                    {
+                        <li>@fileName</li>
+                    }
+                </ul>
+            }
+        </article>
+    </section>
+</div>

@@ -1,0 +1,60 @@
+name: Deploy legacy web app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'legacy-upload-demo/LegacyUploadDemo.Web/**'
+      - '.github/workflows/deploy-legacy-web.yml'
+      - 'scripts/deploy-iis.ps1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-web-iis-deploy
+  cancel-in-progress: false
+
+env:
+  PROJECT_PATH: legacy-upload-demo/LegacyUploadDemo.Web/LegacyUploadDemo.Web.csproj
+  PUBLISH_DIR: ${{ runner.temp }}\legacy-upload-demo-publish
+  IIS_SITE_NAME: LegacyUploadDemo
+  IIS_APP_POOL: LegacyUploadDemo
+  IIS_SITE_PATH: C:\inetpub\wwwroot\LegacyUploadDemo
+  IIS_BINDING_PORT: '80'
+
+jobs:
+  deploy:
+    name: Publish and deploy to IIS
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+      - iis-deploy
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish web app
+        shell: pwsh
+        run: |
+          dotnet restore $env:PROJECT_PATH
+          dotnet publish $env:PROJECT_PATH --configuration Release --no-restore --output $env:PUBLISH_DIR
+
+      - name: Deploy to IIS
+        shell: pwsh
+        run: |
+          ./scripts/deploy-iis.ps1 `
+            -PublishPath $env:PUBLISH_DIR `
+            -SiteName $env:IIS_SITE_NAME `
+            -AppPoolName $env:IIS_APP_POOL `
+            -SitePath $env:IIS_SITE_PATH `
+            -BindingPort ([int]$env:IIS_BINDING_PORT)

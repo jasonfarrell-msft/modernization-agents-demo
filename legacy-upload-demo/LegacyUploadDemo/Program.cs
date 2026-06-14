@@ -14,7 +14,12 @@ namespace LegacyUploadDemo
             Console.WriteLine("LegacyUploadDemo starting...");
 
             var uploadDirectory = ConfigurationManager.AppSettings["UploadDirectory"] ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "uploads");
-            var connectionString = ConfigurationManager.ConnectionStrings["LegacyDb"]?.ConnectionString ?? "Server=(localdb)\\MSSQLLocalDB;Database=LegacyUploadDemo;Trusted_Connection=True;";
+            var connectionString = ConfigurationManager.ConnectionStrings["LegacyDb"]?.ConnectionString
+                ?? "Server=tcp:demo-sql.database.windows.net,1433;Initial Catalog=LegacyUploadDemo;Persist Security Info=False;User ID=dummy-user;Password=ReplaceWithStrongPassword!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
+            var storageConnectionString = ConfigurationManager.AppSettings["StorageConnectionString"] ?? "DefaultEndpointsProtocol=https;AccountName=dummyuploads;AccountKey=REPLACE_WITH_REAL_KEY;EndpointSuffix=core.windows.net";
+
+            Console.WriteLine("Security note: modernize to Key Vault + Managed Identity for sensitive settings.");
+            Console.WriteLine($"Storage connection configured: {!string.IsNullOrWhiteSpace(storageConnectionString)}");
 
             Directory.CreateDirectory(uploadDirectory);
 

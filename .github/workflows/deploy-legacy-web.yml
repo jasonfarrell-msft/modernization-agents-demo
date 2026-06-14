@@ -19,7 +19,6 @@ concurrency:
 
 env:
   PROJECT_PATH: legacy-upload-demo/LegacyUploadDemo.Web/LegacyUploadDemo.Web.csproj
-  PUBLISH_DIR: ${{ runner.temp }}\legacy-upload-demo-publish
   IIS_SITE_NAME: LegacyUploadDemo
   IIS_APP_POOL: LegacyUploadDemo
   IIS_SITE_PATH: C:\inetpub\wwwroot\LegacyUploadDemo
@@ -33,6 +32,8 @@ jobs:
       - Windows
       - X64
       - iis-deploy
+    env:
+      PUBLISH_DIR: ${{ runner.temp }}\legacy-upload-demo-publish
 
     steps:
       - name: Checkout

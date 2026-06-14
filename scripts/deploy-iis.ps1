@@ -50,10 +50,39 @@ else {
 $appOffline = Join-Path $SitePath 'app_offline.htm'
 Set-Content -Path $appOffline -Value '<html><body>Deployment in progress.</body></html>' -Encoding UTF8
 
-try {
-    if ((Get-WebAppPoolState -Name $AppPoolName).Value -eq 'Started') {
-        Stop-WebAppPool -Name $AppPoolName
+function Wait-AppPoolState {
+    param([string]$Name, [string]$Desired, [int]$TimeoutSeconds = 30)
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $state = (Get-WebAppPoolState -Name $Name).Value
+        if ($state -eq $Desired) { return $true }
+        Start-Sleep -Milliseconds 750
     }
+    return ((Get-WebAppPoolState -Name $Name).Value -eq $Desired)
+}
+
+function Set-AppPoolState {
+    # Resilient start/stop: WAS can briefly reject control messages (0x80070425)
+    # while the pool is mid-transition. Retry until the desired state is reached.
+    param([string]$Name, [ValidateSet('Start','Stop')] [string]$Action)
+    $desired = if ($Action -eq 'Start') { 'Started' } else { 'Stopped' }
+    for ($attempt = 1; $attempt -le 8; $attempt++) {
+        $state = (Get-WebAppPoolState -Name $Name).Value
+        if ($state -eq $desired) { return }
+        try {
+            if ($Action -eq 'Start') { Start-WebAppPool -Name $Name } else { Stop-WebAppPool -Name $Name }
+        }
+        catch {
+            # Transitional WAS error; wait and retry.
+        }
+        if (Wait-AppPoolState -Name $Name -Desired $desired -TimeoutSeconds 15) { return }
+        Start-Sleep -Seconds 2
+    }
+    throw "App pool '$Name' did not reach state '$desired'."
+}
+
+try {
+    Set-AppPoolState -Name $AppPoolName -Action 'Stop'
 
     # Mirror the published site, but never clobber app_offline during the copy.
     $robocopyArgs = @(
@@ -77,7 +106,7 @@ try {
 }
 finally {
     Remove-Item $appOffline -Force -ErrorAction SilentlyContinue
-    Start-WebAppPool -Name $AppPoolName
+    Set-AppPoolState -Name $AppPoolName -Action 'Start'
 }
 
 # --- Ensure the server-local data directories exist and are writable by the app pool ---

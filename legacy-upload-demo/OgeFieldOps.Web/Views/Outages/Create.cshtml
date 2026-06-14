@@ -1,0 +1,73 @@
+@model OgeFieldOps.Web.Models.WorkOrderViewModel
+@{
+    ViewBag.Title = "New work order";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>New Work Order</h2>
+<p class="text-muted">Log a new outage / field work order. A ticket number is assigned automatically.</p>
+
+@using (Html.BeginForm("Create", "Outages", FormMethod.Post, new { @class = "form-horizontal" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.Region, new { @class = "col-sm-3 control-label" })
+        <div class="col-sm-6">
+            @Html.TextBoxFor(m => m.Region, new { @class = "form-control", placeholder = "e.g. Oklahoma City" })
+            @Html.ValidationMessageFor(m => m.Region, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.Cause, new { @class = "col-sm-3 control-label" })
+        <div class="col-sm-6">
+            @Html.TextBoxFor(m => m.Cause, new { @class = "form-control", placeholder = "e.g. Storm - downed line" })
+            @Html.ValidationMessageFor(m => m.Cause, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.Status, new { @class = "col-sm-3 control-label" })
+        <div class="col-sm-4">
+            @Html.DropDownListFor(m => m.Status, (SelectList)ViewBag.StatusOptions, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Status, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.CustomersAffected, new { @class = "col-sm-3 control-label" })
+        <div class="col-sm-3">
+            @Html.TextBoxFor(m => m.CustomersAffected, new { @class = "form-control", type = "number", min = "0" })
+            @Html.ValidationMessageFor(m => m.CustomersAffected, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.ReportedAt, new { @class = "col-sm-3 control-label" })
+        <div class="col-sm-4">
+            @Html.TextBoxFor(m => m.ReportedAt, "{0:yyyy-MM-ddTHH:mm}", new { @class = "form-control", type = "datetime-local" })
+            @Html.ValidationMessageFor(m => m.ReportedAt, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.ReportedBy, new { @class = "col-sm-3 control-label" })
+        <div class="col-sm-4">
+            @Html.TextBoxFor(m => m.ReportedBy, new { @class = "form-control", placeholder = "optional" })
+            @Html.ValidationMessageFor(m => m.ReportedBy, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="col-sm-offset-3 col-sm-6">
+            <button type="submit" class="btn btn-primary">Create work order</button>
+            @Html.ActionLink("Cancel", "Index", "Outages", null, new { @class = "btn btn-link" })
+        </div>
+    </div>
+}
+
+@section scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

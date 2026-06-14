@@ -25,6 +25,66 @@ namespace OgeFieldOps.Web.Controllers
             return View(result);
         }
 
+        // GET: /Outages/Create
+        public ActionResult Create()
+        {
+            var workOrder = new WorkOrderViewModel
+            {
+                Status = "Reported",
+                ReportedAt = DateTime.Now
+            };
+            ViewBag.StatusOptions = BuildStatusOptions(workOrder.Status);
+            return View(workOrder);
+        }
+
+        // POST: /Outages/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create(WorkOrderViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.StatusOptions = BuildStatusOptions(model.Status);
+                return View(model);
+            }
+
+            var ticketNumber = _outages.GetNextTicketNumber();
+            var reportedBy = string.IsNullOrWhiteSpace(model.ReportedBy) ? CurrentUser : model.ReportedBy.Trim();
+
+            var id = _outages.Create(new OutageRecord
+            {
+                TicketNumber = ticketNumber,
+                Region = model.Region,
+                Cause = model.Cause,
+                Status = model.Status,
+                CustomersAffected = model.CustomersAffected,
+                ReportedAt = model.ReportedAt,
+                ReportedBy = reportedBy
+            });
+
+            // Fire a dispatch notification (.eml dropped to the pickup directory).
+            try
+            {
+                _email.SendWorkOrderCreatedNotification(ticketNumber, model.Region, model.Status, reportedBy);
+            }
+            catch (Exception ex)
+            {
+                _audit.Write(reportedBy, "EMAIL_FAILED", ex.Message);
+            }
+
+            _audit.Write(reportedBy, "WORKORDER_CREATE",
+                "Ticket=" + ticketNumber + "; Region=" + model.Region + "; Status=" + model.Status);
+
+            TempData["Message"] = "Created work order " + ticketNumber + ".";
+            return RedirectToAction("Details", new { id = id });
+        }
+
+        private static SelectList BuildStatusOptions(string selected)
+        {
+            var statuses = new[] { "Reported", "In Progress", "Restored" };
+            return new SelectList(statuses, selected);
+        }
+
         // GET: /Outages/Details/5
         public ActionResult Details(int id)
         {

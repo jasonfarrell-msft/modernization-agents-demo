@@ -41,6 +41,21 @@ namespace OgeFieldOps.Web.Services
             Send(DispatchAddress, subject, body);
         }
 
+        public void SendWorkOrderCreatedNotification(string ticketNumber, string region, string status, string createdBy)
+        {
+            var subject = "[OGE FieldOps] New work order " + ticketNumber + " (" + region + ")";
+            var body =
+                "A new work order was logged in the OGE Field Operations portal." + Environment.NewLine +
+                Environment.NewLine +
+                "Ticket:     " + ticketNumber + Environment.NewLine +
+                "Region:     " + region + Environment.NewLine +
+                "Status:     " + status + Environment.NewLine +
+                "Logged by:  " + createdBy + Environment.NewLine +
+                "Time (UTC): " + DateTime.UtcNow.ToString("u") + Environment.NewLine;
+
+            Send(DispatchAddress, subject, body);
+        }
+
         public void Send(string to, string subject, string body)
         {
             var pickup = PickupDirectory;

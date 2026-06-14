@@ -90,6 +90,24 @@ namespace OgeFieldOps.Web.Data
             return null;
         }
 
+        /// <summary>
+        /// Generates the next sequential ticket number for the current year in the
+        /// form OUT-{yyyy}-{nnnn}, based on the highest existing suffix for that year.
+        /// </summary>
+        public string GetNextTicketNumber()
+        {
+            var year = DateTime.Now.Year.ToString();
+            using (var connection = Database.OpenConnection())
+            using (var command = new SqlCommand(
+                "SELECT ISNULL(MAX(TRY_CONVERT(INT, RIGHT(TicketNumber, 4))), 1000) + 1 " +
+                "FROM dbo.Outages WHERE TicketNumber LIKE @prefix", connection))
+            {
+                command.Parameters.AddWithValue("@prefix", "OUT-" + year + "-%");
+                var next = (int)command.ExecuteScalar();
+                return "OUT-" + year + "-" + next.ToString("D4");
+            }
+        }
+
         public int Create(OutageRecord outage)
         {
             using (var connection = Database.OpenConnection())

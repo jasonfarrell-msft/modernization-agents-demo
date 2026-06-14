@@ -13,6 +13,7 @@
     </div>
     <button type="submit" class="btn btn-default">Search</button>
     @Html.ActionLink("Clear", "Index", "Outages", null, new { @class = "btn btn-link" })
+    @Html.ActionLink("New Work Order", "Create", "Outages", null, new { @class = "btn btn-primary pull-right", style = "margin-left:8px;" })
     @Html.ActionLink("Export CSV", "ExportCsv", "Outages", null, new { @class = "btn btn-success pull-right" })
 }
 

@@ -104,6 +104,7 @@
     </Compile>
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\OutageModels.cs" />
+    <Compile Include="Models\WorkOrderViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AuditLogService.cs" />
     <Compile Include="Services\EmailService.cs" />
@@ -126,6 +127,7 @@
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Outages\Index.cshtml" />
+    <Content Include="Views\Outages\Create.cshtml" />
     <Content Include="Views\Outages\Upload.cshtml" />
     <Content Include="Views\Outages\Details.cshtml" />
     <Content Include="Views\Admin\Notifications.cshtml" />

@@ -83,4 +83,15 @@ finally {
     Start-WebAppPool -Name $AppPoolName
 }
 
+$uploadsDir = Join-Path $SitePath 'uploads'
+New-Item -ItemType Directory -Path $uploadsDir -Force | Out-Null
+
+$appPoolIdentity = "IIS AppPool\$AppPoolName"
+$acl = Get-Acl $SitePath
+$writeRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    $appPoolIdentity, 'Modify', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+$acl.AddAccessRule($writeRule)
+Set-Acl -Path $SitePath -AclObject $acl
+
 Write-Host "Deployed '$SiteName' to '$SitePath'."
+exit 0

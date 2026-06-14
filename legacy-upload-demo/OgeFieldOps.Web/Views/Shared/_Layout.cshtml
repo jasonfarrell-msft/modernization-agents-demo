@@ -21,27 +21,7 @@
                 <ul class="nav navbar-nav">
                     <li>@Html.ActionLink("Outages", "Index", "Outages")</li>
                     <li>@Html.ActionLink("Export CSV", "ExportCsv", "Outages")</li>
-                    @if (User != null && User.IsInRole("Admin"))
-                    {
-                        <li>@Html.ActionLink("Notifications", "Notifications", "Admin")</li>
-                    }
-                </ul>
-                <ul class="nav navbar-nav navbar-right">
-                    @if (User != null && User.Identity.IsAuthenticated)
-                    {
-                        <li><p class="navbar-text">Signed in as <strong>@User.Identity.Name</strong></p></li>
-                        <li>
-                            @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { id = "logoutForm" }))
-                            {
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-link navbar-link" style="padding-top:15px;">Sign out</button>
-                            }
-                        </li>
-                    }
-                    else
-                    {
-                        <li>@Html.ActionLink("Sign in", "Login", "Account")</li>
-                    }
+                    <li>@Html.ActionLink("Notifications", "Notifications", "Admin")</li>
                 </ul>
             </div>
         </div>

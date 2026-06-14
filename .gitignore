@@ -502,3 +502,4 @@ $RECYCLE.BIN/
 /playwright/.auth/
 /user.json
 .azure
+.playwright-mcp/

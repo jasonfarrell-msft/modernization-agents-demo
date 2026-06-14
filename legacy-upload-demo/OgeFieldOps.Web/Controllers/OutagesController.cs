@@ -8,9 +8,11 @@ using OgeFieldOps.Web.Services;
 
 namespace OgeFieldOps.Web.Controllers
 {
-    [Authorize]
     public class OutagesController : Controller
     {
+        // Wide-open app: no login, so uploads/exports are attributed to a generic user.
+        private const string CurrentUser = "anonymous";
+
         private readonly OutageRepository _outages = new OutageRepository();
         private readonly FileStorageService _files = new FileStorageService();
         private readonly EmailService _email = new EmailService();
@@ -80,20 +82,20 @@ namespace OgeFieldOps.Web.Controllers
                 StoredPath = stored.StoredPath,
                 SizeBytes = stored.SizeBytes,
                 UploadedAt = DateTime.UtcNow,
-                UploadedBy = User.Identity.Name
+                UploadedBy = CurrentUser
             });
 
             // Fire a dispatch notification (.eml dropped to the pickup directory).
             try
             {
-                _email.SendOutageDocumentNotification(outage.TicketNumber, stored.FileName, User.Identity.Name);
+                _email.SendOutageDocumentNotification(outage.TicketNumber, stored.FileName, CurrentUser);
             }
             catch (Exception ex)
             {
-                _audit.Write(User.Identity.Name, "EMAIL_FAILED", ex.Message);
+                _audit.Write(CurrentUser, "EMAIL_FAILED", ex.Message);
             }
 
-            _audit.Write(User.Identity.Name, "UPLOAD",
+            _audit.Write(CurrentUser, "UPLOAD",
                 "Outage=" + outage.TicketNumber + "; File=" + stored.FileName + "; Bytes=" + stored.SizeBytes);
 
             TempData["Message"] = "Uploaded '" + stored.FileName + "' to outage " + outage.TicketNumber + ".";
@@ -125,7 +127,7 @@ namespace OgeFieldOps.Web.Controllers
                 sb.Append("\r\n");
             }
 
-            _audit.Write(User.Identity.Name, "EXPORT_CSV", "Rows=" + table.Rows.Count);
+            _audit.Write(CurrentUser, "EXPORT_CSV", "Rows=" + table.Rows.Count);
 
             var bytes = Encoding.UTF8.GetBytes(sb.ToString());
             return File(bytes, "text/csv", "oge-outages-" + DateTime.UtcNow.ToString("yyyyMMdd") + ".csv");

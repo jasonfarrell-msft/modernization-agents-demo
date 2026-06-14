@@ -9,10 +9,9 @@ using OgeFieldOps.Web.Services;
 namespace OgeFieldOps.Web.Controllers
 {
     /// <summary>
-    /// Admin-only pages. The Notifications view lists the .eml files that the SMTP pickup
-    /// directory has accumulated - the pre-cloud way to "see what was emailed".
+    /// Notifications page. Lists the .eml files that the SMTP pickup directory has accumulated -
+    /// the pre-cloud way to "see what was emailed". Wide-open: no authorization required.
     /// </summary>
-    [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
         private readonly AuditLogService _audit = new AuditLogService();
@@ -42,7 +41,7 @@ namespace OgeFieldOps.Web.Controllers
             }
 
             ViewBag.PickupDirectory = pickup;
-            _audit.Write(User.Identity.Name, "VIEW_NOTIFICATIONS", "Count=" + messages.Count);
+            _audit.Write("anonymous", "VIEW_NOTIFICATIONS", "Count=" + messages.Count);
             return View(messages);
         }
 

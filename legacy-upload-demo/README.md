@@ -22,7 +22,7 @@ company's field operations / dispatch team, built the way it would have been whe
 ### Features (each maps to a classic pre-cloud pattern)
 | Feature | Pattern demonstrated |
 |---|---|
-| **Forms Authentication** (login/logout, roles) | `<authentication mode="Forms">`, SQL-backed users, salted SHA-256 |
+| **Open access** (no login) | Wide-open portal — anyone can use it. Auth/identity is deferred to the modernization workshop |
 | **File upload** of field docs / meter files | Saved to a **config-defined server directory** (`appSettings["UploadDirectory"]`) + DB row |
 | **Outage work-order list** (search + server-side paging) | `SqlDataReader` rendered in a Razor table |
 | **CSV export** of outages | `SqlDataAdapter` → `DataTable` → streamed `FileResult` |
@@ -39,18 +39,16 @@ company's field operations / dispatch team, built the way it would have been whe
 > server-local paths with **Blob Storage**, replace SMTP pickup with a mail/queue service,
 > and containerize / move to modern ASP.NET Core — while preserving behavior.
 
-### Demo accounts
-| Username | Password | Role |
-|---|---|---|
-| `admin` | `Admin@2014` | Admin |
-| `dispatcher` | `Dispatch@2014` | Dispatcher |
-| `ftech` | `Field@2014` | FieldTech |
+### Access
+The portal is **wide open** — there is no login. Authentication, identity, and
+role-based authorization are intentionally left out and will be added during the
+modernization workshop.
 
 ### Project layout
 ```
 OgeFieldOps.Web/
   App_Start/        RouteConfig, FilterConfig, BundleConfig
-  Controllers/      Account, Home, Outages, Admin
+  Controllers/      Home, Outages, Admin
   Data/             Database (ADO.NET), OutageRepository, UserRepository
   Models/           OutageModels, AccountViewModels
   Services/         FileStorageService, EmailService, AuditLogService

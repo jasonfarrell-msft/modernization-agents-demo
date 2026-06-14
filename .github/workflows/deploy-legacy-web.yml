@@ -32,8 +32,6 @@ jobs:
       - Windows
       - X64
       - iis-deploy
-    env:
-      PUBLISH_DIR: ${{ runner.temp }}\legacy-upload-demo-publish
 
     steps:
       - name: Checkout
@@ -47,8 +45,10 @@ jobs:
       - name: Publish web app
         shell: pwsh
         run: |
+          $publishDir = Join-Path $env:RUNNER_TEMP 'legacy-upload-demo-publish'
+          "PUBLISH_DIR=$publishDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           dotnet restore $env:PROJECT_PATH
-          dotnet publish $env:PROJECT_PATH --configuration Release --no-restore --output $env:PUBLISH_DIR
+          dotnet publish $env:PROJECT_PATH --configuration Release --no-restore --output $publishDir
 
       - name: Deploy to IIS
         shell: pwsh

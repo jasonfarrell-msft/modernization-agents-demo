@@ -43,7 +43,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Publish web app
-        shell: pwsh
+        shell: powershell
         run: |
           $publishDir = Join-Path $env:RUNNER_TEMP 'legacy-upload-demo-publish'
           "PUBLISH_DIR=$publishDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
@@ -51,7 +51,7 @@ jobs:
           dotnet publish $env:PROJECT_PATH --configuration Release --no-restore --output $publishDir
 
       - name: Deploy to IIS
-        shell: pwsh
+        shell: powershell
         run: |
           ./scripts/deploy-iis.ps1 `
             -PublishPath $env:PUBLISH_DIR `

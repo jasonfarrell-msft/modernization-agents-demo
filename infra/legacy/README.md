@@ -9,11 +9,17 @@ This folder contains Azure Bicep for a legacy demo VM in resource group `rg-mode
 ## Suggested deployment flow
 For the demo, use the Bash/Azure CLI script in this folder:
 
-1. Run the deployment script:
+1. Run the deployment script (IIS only):
    ```
    ./deploy.sh --resource-group rg-modernization-swc-mx01 --location swedencentral
    ```
-2. If you want the VM to self-configure IIS during deployment, pass a public script URI:
+2. To also provision HTTPS in a single step, add `--contact-email`:
+   ```
+   ./deploy.sh --resource-group rg-modernization-swc-mx01 --location swedencentral \
+               --contact-email ops@yourorg.com
+   ```
+   This runs `install-iis.ps1` followed by `install-ssl.ps1` on the VM automatically.
+3. If you want the VM to self-configure IIS during deployment via the Custom Script Extension, pass a public script URI:
    ```
    ./deploy.sh --resource-group rg-modernization-swc-mx01 --location swedencentral --custom-script-uri https://example.com/install-iis.ps1
    ```

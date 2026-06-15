@@ -1,96 +1,103 @@
 # Legacy VM deployment scaffolding
 
-This folder contains Azure Bicep for a legacy demo VM in resource group `rg-modernization-swc-mx01` in Sweden Central.
+This folder contains reproducible infrastructure and guest configuration scripts for the legacy demo VM (`vm-legacy-swc`) in resource group `rg-modernization-swc-mx01` (region `swedencentral`).
 
 ## What it deploys
-- Windows VM with a public IP and NSG rules for RDP, HTTP, and HTTPS.
-- Optional Custom Script Extension hook for IIS/legacy app setup.
+- Windows VM with public IP + NSG rules for RDP/HTTP/HTTPS.
+- Optional Custom Script Extension hook.
+- Guest-side scripts for SQL Express install, DB provisioning, IIS/ASP.NET 4.x setup, GitHub runner registration, and optional SSL.
 
-## Suggested deployment flow
-For the demo, use the Bash/Azure CLI script in this folder:
+## Prerequisites
+- Azure CLI logged in.
+- Bicep CLI available (`bicep`).
+- Secrets set as environment variables (never hardcode):
 
-1. Run the deployment script (IIS only):
-   ```
-   ./deploy.sh --resource-group rg-modernization-swc-mx01 --location swedencentral
-   ```
-2. To also provision HTTPS in a single step, add `--contact-email`:
-   ```
-   ./deploy.sh --resource-group rg-modernization-swc-mx01 --location swedencentral \
-               --contact-email ops@yourorg.com
-   ```
-   This runs `install-iis.ps1` followed by `install-ssl.ps1` on the VM automatically.
-3. If you want the VM to self-configure IIS during deployment via the Custom Script Extension, pass a public script URI:
-   ```
-   ./deploy.sh --resource-group rg-modernization-swc-mx01 --location swedencentral --custom-script-uri https://example.com/install-iis.ps1
-   ```
-
-The script uses the native Bicep parameter file under the hood and also runs the guest-side IIS setup script on the VM, so the demo path is self-contained.
-
-## TLS / HTTPS setup
-
-The site is served over **HTTPS (port 443)** using a free, trusted, auto-renewing
-[Let's Encrypt](https://letsencrypt.org/) certificate obtained via
-[win-acme](https://www.win-acme.com/).
-
-### How to enable TLS on the VM
-
-Run the following command in an **elevated PowerShell** session on the VM:
-
-```powershell
-.\install-ssl.ps1 -ContactEmail ops@yourorg.com
+```bash
+export VM_ADMIN_PASSWORD='<vm-admin-password>'
+export SQL_SA_PASSWORD='<sql-sa-password>'
+export OGE_APP_PASSWORD='<oge_app-password>'
+export GITHUB_RUNNER_REGISTRATION_TOKEN='<short-lived-runner-registration-token>'
+# Optional overrides:
+export GITHUB_RUNNER_URL='https://github.com/jasonfarrell-msft/modernization-agents-demo'
+export GITHUB_RUNNER_NAME='vm-legacy-swc'
+export GITHUB_RUNNER_LABELS='self-hosted,Windows,X64,iis-deploy'
 ```
 
-The script is idempotent — it is safe to run again after an environment rebuild.
+## Ordered rebuild sequence (zero manual steps)
 
-#### What the script does
+### Single command from your workstation
 
-| Step | Action |
-|------|--------|
-| 1 | Installs the **IIS URL Rewrite 2.1** module (if not already present). |
-| 2 | Downloads **win-acme** to `C:\tools\wacs\`. |
-| 3 | Runs win-acme in unattended mode: obtains a Let's Encrypt cert via HTTP-01 challenge, binds it to IIS on **port 443**, and registers a **Windows Scheduled Task** for automatic renewal every 60 days. |
-| 4 | Injects a URL Rewrite rule into the site's `web.config` so all HTTP requests receive a **301 Permanent redirect** to HTTPS. |
+Run the central script (`deploy.sh`) with `--full-setup`:
 
-#### Parameters
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `-Domain` | `vm-legacy-swc.swedencentral.cloudapp.azure.com` | Public FQDN of the VM; must resolve to this host at issuance time. |
-| `-SiteName` | `OgeFieldOps` | IIS website name (falls back to `Default Web Site` if not found). |
-| `-ContactEmail` | *(required)* | E-mail address for the Let's Encrypt ACME account. |
-| `-WacsVersion` | `2.2.9.1701` | win-acme release version to download. |
-| `-WacsDir` | `C:\tools\wacs` | Local directory for win-acme binaries. |
-
-### Port 80 decision
-
-**Port 80 is kept open** (NSG rule `AllowHTTP`).
-
-The ACME HTTP-01 challenge requires port 80 to be reachable from the internet at
-every renewal attempt. Closing port 80 at the NSG would silently break automatic
-renewal every 60 days.
-
-If you prefer to close port 80 after initial issuance:
-1. Reconfigure win-acme to use **TLS-ALPN-01** validation (no port 80 needed).
-2. Update the NSG rule `AllowHTTP` to **Deny** in `main.bicep`.
-3. Document the change so the next engineer knows why port 80 is closed.
-
-### Auto-renewal
-
-win-acme registers a **Windows Scheduled Task** (`win-acme renew (acme-v02.api.letsencrypt.org)`)
-that runs daily and renews any certificate with fewer than 55 days remaining.
-No manual intervention is required.
-
-To verify the scheduled task exists on the VM:
-```powershell
-Get-ScheduledTask | Where-Object TaskName -like '*win-acme*'
+```bash
+./deploy.sh \
+  --resource-group rg-modernization-swc-mx01 \
+  --location swedencentral \
+  --full-setup \
+  --contact-email ops@yourorg.com
 ```
 
-To test renewal without waiting:
+Execution order is:
+1. Bicep deploy (`main.bicep` + `main.bicepparam`)
+2. `install-sql-express.ps1` (SQL Express unattended install, instance `SQLEXPRESS`)
+3. `provision-legacy-db.ps1` (creates DB/login/user and runs `Schema.sql` then `Seed.sql` via `System.Data.SqlClient` + `GO` splitting)
+4. `install-iis.ps1` (IIS + ASP.NET 4.x features required by MVC5)
+5. `register-github-runner.ps1` (labels: `self-hosted,Windows,X64,iis-deploy`, installed as Windows service)
+6. `install-ssl.ps1` (optional when `--contact-email` is provided)
+
+### Guest-side entry point (inside VM)
+
+If you prefer running entirely from the VM, use:
+
 ```powershell
-& 'C:\tools\wacs\wacs.exe' --renew --force
+.\configure-legacy-vm.ps1 `
+  -SqlSaPassword $env:SQL_SA_PASSWORD `
+  -OgeAppPassword $env:OGE_APP_PASSWORD `
+  -RunnerUrl $env:GITHUB_RUNNER_URL `
+  -RunnerRegistrationToken $env:GITHUB_RUNNER_REGISTRATION_TOKEN `
+  -RunnerLabels 'self-hosted,Windows,X64,iis-deploy' `
+  -ContactEmail $env:LETSENCRYPT_CONTACT_EMAIL
 ```
+
+## Script details
+
+### `install-sql-express.ps1`
+- Uses unattended install via generated `ConfigurationFile.ini`.
+- Installs `SQLEXPRESS` in mixed mode (`sa` password passed by parameter/env var).
+- Idempotent: skips install if service `MSSQL$SQLEXPRESS` already exists.
+
+### `provision-legacy-db.ps1`
+- Ensures database `OgeFieldOps` exists.
+- Ensures SQL login/user `oge_app` exists and is in `db_owner`.
+- Executes schema + seed batches using `System.Data.SqlClient` (no `sqlcmd` dependency).
+- Splits SQL scripts on `GO` lines.
+- Idempotent/re-runnable: object creation uses existence guards; schema/seed scripts reset and repopulate data safely on rerun.
+
+### `install-iis.ps1`
+Installs IIS plus ASP.NET 4.x support required for classic MVC5:
+- `Web-Server`
+- `Web-Mgmt-Tools`
+- `Web-Net-Ext45`
+- `Web-Asp-Net45`
+- `Web-ISAPI-Ext`
+- `Web-ISAPI-Filter`
+- `NET-Framework-45-ASPNET`
+
+### `register-github-runner.ps1`
+- Registers runner against `GITHUB_RUNNER_URL`.
+- Uses required labels: `self-hosted,Windows,X64,iis-deploy`.
+- Installs as a Windows service and starts it.
+- Idempotent: if an existing `actions.runner.*` service is already present, script skips re-registration and ensures service is running.
+
+### `install-ssl.ps1`
+- Obtains Let's Encrypt certificate via win-acme.
+- Binds HTTPS and configures HTTP→HTTPS redirect.
+- Idempotent and safe to rerun.
+
+## Runner token notes
+`GITHUB_RUNNER_REGISTRATION_TOKEN` is short-lived. Generate a fresh token before rebuild and pass it as an environment variable. Do not commit tokens or PATs.
 
 ## Notes
-- `main.bicepparam` is the preferred deployment input. Generated JSON artifacts such as `main.parameters.json` and `main.json` are not required for the standard flow.
-- The VM is intentionally public for the legacy demo path.
-- For a production-ready Azure version of this sample, prefer Azure App Service or Azure VM + Azure Files / Blob Storage rather than local disk.
+- Existing NSG rules already allow 80/443/3389.
+- `main.bicepparam` reads `VM_ADMIN_PASSWORD` from environment.
+- For full reproducibility, use `--full-setup` so all post-deploy guest steps execute in order.

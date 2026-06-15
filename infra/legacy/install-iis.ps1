@@ -3,7 +3,17 @@ param()
 $ErrorActionPreference = 'Stop'
 
 Write-Host 'Installing IIS features...'
-Install-WindowsFeature Web-Server, Web-Mgmt-Tools -IncludeAllSubFeature -IncludeManagementTools
+$features = @(
+    'Web-Server',
+    'Web-Mgmt-Tools',
+    'Web-Net-Ext45',
+    'Web-Asp-Net45',
+    'Web-ISAPI-Ext',
+    'Web-ISAPI-Filter',
+    'NET-Framework-45-ASPNET'
+)
+
+Install-WindowsFeature $features -IncludeAllSubFeature -IncludeManagementTools
 
 $siteRoot = 'C:\inetpub\wwwroot'
 New-Item -ItemType Directory -Force -Path $siteRoot | Out-Null

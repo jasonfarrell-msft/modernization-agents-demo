@@ -1,0 +1,47 @@
+{
+  "runId": "{{RUN_ID}}",
+  "target": {
+    "appPath": "{{TARGET_APP_REL}}",
+    "baseUrl": "{{APP_URL}}",
+    "uploadRouteHint": "{{UPLOAD_ROUTE}}"
+  },
+  "constraints": {
+    "baselineOnly": true,
+    "noModernizationChanges": true,
+    "humanApprovalRequired": true
+  },
+  "discoveredSettings": {
+    "allowedUploadExtensions": "{{ALLOWED_EXTENSIONS}}",
+    "maxUploadSizeMb": "{{MAX_UPLOAD_MB}}",
+    "validationErrorMessage": "{{VALIDATION_ERROR}}"
+  },
+  "scenarioMinimums": [
+    "page-load",
+    "upload-form-renders",
+    "valid-upload",
+    "invalid-extension",
+    "missing-file",
+    "oversized-file"
+  ],
+  "execution": {
+    "status": "pending",
+    "playwrightCommand": "npx playwright test",
+    "artifacts": {
+      "htmlReport": "",
+      "traceFiles": [],
+      "screenshots": [],
+      "videos": []
+    }
+  },
+  "summary": {
+    "passed": 0,
+    "failed": 0,
+    "blocked": 0,
+    "gaps": []
+  },
+  "approval": {
+    "status": "required",
+    "approvedBy": "",
+    "notes": ""
+  }
+}

@@ -1,0 +1,29 @@
+Establish a modernization baseline contract for legacy-upload-demo using Playwright.
+
+Constraints:
+- Scope current user-visible behavior only.
+- Do not modernize or refactor application code.
+- Use GitHub Copilot custom agents to generate and refine baseline Playwright tests.
+- Keep humans in approval control.
+
+Target context:
+- Base URL: {{APP_URL}}
+- Upload route hint: {{UPLOAD_ROUTE}}
+- Allowed upload extensions: {{ALLOWED_EXTENSIONS}}
+- Max upload size (MB): {{MAX_UPLOAD_MB}}
+- Known validation message: {{VALIDATION_ERROR}}
+
+Required workflow:
+1. Build a baseline scenario matrix for upload behavior.
+2. Ensure an outage record exists so upload scenarios can use a valid outage id.
+3. Generate or update Playwright baseline tests under pw-orchestrator/playwright only.
+4. Run tests and collect artifacts (report, traces, screenshots/videos for failures).
+5. Produce a gap summary with pass/fail/blocked status.
+6. Pause for human approval before any repo changes outside pw-orchestrator/playwright.
+
+Required output:
+- Scenario matrix with priorities
+- Playwright test file list
+- Test execution summary
+- Risk and gap summary
+- Explicit human approval checkpoint

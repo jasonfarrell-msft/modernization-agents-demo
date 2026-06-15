@@ -1,193 +1,101 @@
 # Modernization Demo
 
-## Section 1: Establish a Playwright Baseline
+## Section 1: Establish a Playwright Baseline (Prompt-First)
 
-Use Playwright to capture the current behavior of `legacy-upload-demo` before making modernization changes.
+Run this section as an orchestrated workflow, not a manual checklist.
 
-### 1. Define baseline scope
+### 1. Use the operator prompt
 
-- [ ] Identify the current user workflows in `legacy-upload-demo`.
-- [ ] Focus only on observable behavior.
-- [ ] Do not refactor or change application code.
-- [ ] Capture known quirks, bugs, and edge cases as they exist today.
-- [ ] Treat the baseline as the regression contract for modernization.
+Start with a single prompt to the Playwright Orchestrator:
 
-Baseline scope:
+```text
+Establish a baseline test contract for legacy-upload-demo using Playwright.
+Scope current user-visible behavior only.
+Use GitHub Copilot custom agents to propose scenarios and generate baseline tests.
+Run the baseline suite, collect artifacts, and return a gap summary with risks.
+Do not modernize application code in this phase.
+```
 
-- Upload flow
-- File validation behavior
-- Success and error states
-- Required fields and form behavior
-- Navigation and page-level expectations
-- Any legacy-specific behavior users depend on
+### 2. Run the orchestrator phases
 
-### 2. Set up the test environment
+Require these phases in order:
 
-From the repository root:
+1. Scope current behavior.
+2. Generate baseline scenarios.
+3. Generate or update baseline Playwright tests.
+4. Execute the baseline Playwright suite.
+5. Collect reports and diagnostics.
+6. Produce a baseline summary and known gaps.
+7. Pause for human approval.
+
+### 3. Enforce baseline scope rules
+
+- [ ] Test user-visible behavior only.
+- [ ] Do not refactor app code.
+- [ ] Preserve known legacy quirks unless explicitly approved to change.
+- [ ] Treat baseline output as the regression contract for modernization.
+
+### 4. Set baseline scenario minimums
+
+Require these scenarios at minimum:
+
+- [ ] Page loads successfully.
+- [ ] Upload form renders expected fields.
+- [ ] Valid file upload succeeds.
+- [ ] Invalid file type shows current error behavior.
+- [ ] Missing file submission shows current validation behavior.
+- [ ] Large file behavior is captured.
+- [ ] Cancel/reset behavior is captured (if present).
+- [ ] Success outcome is captured.
+- [ ] Error outcome is captured.
+
+### 5. Set artifact and security rules
+
+Collect:
+
+- Playwright HTML report
+- Screenshots
+- Traces
+- Videos for failures
+- Gap summary
+
+Enforce:
+
+- [ ] Review artifacts for sensitive data before sharing.
+- [ ] Redact or discard sensitive artifacts.
+- [ ] Keep only required artifacts.
+- [ ] Set short CI retention unless longer retention is explicitly required.
+
+### 6. Set CI baseline gate expectations
+
+- [ ] Run baseline Playwright tests on pull requests.
+- [ ] Fail PRs on baseline regressions.
+- [ ] Upload approved diagnostics for failed runs.
+- [ ] Keep retention and access controls aligned with security policy.
+
+Baseline command:
+
+```bash
+npx playwright test
+```
+
+### 7. Position the Playwright Orchestrator in the demo
+
+Use this narrative:
+
+1. Playwright is the test execution engine.
+2. GitHub Copilot custom agents handle scenario/test generation and analysis.
+3. The orchestrator coordinates the end-to-end loop.
+4. Humans approve the baseline contract before modernization starts.
+
+### 8. Use fallback environment setup only when needed
+
+Use manual setup only if the environment is not ready for orchestrated execution.
+
+Fallback setup:
 
 ```bash
 cd legacy-upload-demo
 npm install
 npx playwright install
 ```
-
-Confirm the application can run locally.
-
-```bash
-npm start
-```
-
-In a separate terminal, confirm Playwright can execute.
-
-```bash
-npx playwright test
-```
-
-### 3. Define the Playwright test structure
-
-Create a baseline test structure that separates current-state coverage from future modernization tests.
-
-Recommended structure:
-
-```text
-legacy-upload-demo/
-  tests/
-    baseline/
-      upload.spec.ts
-      validation.spec.ts
-      navigation.spec.ts
-    fixtures/
-      valid-upload-file.*
-      invalid-upload-file.*
-    artifacts/
-```
-
-Guidelines:
-
-- [ ] Keep baseline tests readable and scenario-focused.
-- [ ] Name tests after user-visible behavior.
-- [ ] Avoid testing implementation details.
-- [ ] Use fixtures for repeatable upload cases.
-- [ ] Mark unclear behavior with comments for review, not fixes.
-
-### 4. Capture baseline scenarios
-
-Create Playwright tests for the current behavior.
-
-Minimum baseline scenarios:
-
-- [ ] Page loads successfully.
-- [ ] Upload form renders with expected fields.
-- [ ] Valid file upload completes successfully.
-- [ ] Invalid file type shows the current error behavior.
-- [ ] Missing file submission shows the current validation behavior.
-- [ ] Large file behavior is documented.
-- [ ] Cancel or reset behavior is captured if available.
-- [ ] Success message or result page is captured.
-- [ ] Error message content is captured.
-- [ ] Browser console errors are reviewed and noted.
-
-For each scenario, capture:
-
-- User action
-- Expected current result
-- Screenshots where useful
-- Any legacy behavior that may look incorrect but is currently relied on
-
-### 5. Add CI integration expectations
-
-The baseline should run automatically before modernization changes are accepted.
-
-CI expectations:
-
-- [ ] Run Playwright tests on pull requests.
-- [ ] Run against the local app in CI.
-- [ ] Upload Playwright reports as build artifacts.
-- [ ] Review screenshots, traces, videos, and reports for sensitive data before sharing or retaining them.
-- [ ] Define artifact retention limits to control storage cost.
-- [ ] Fail the build on baseline regression.
-- [ ] Preserve screenshots, traces, and videos for failed tests.
-
-Expected command:
-
-```bash
-npx playwright test
-```
-
-Expected artifacts:
-
-- Playwright HTML report
-- Screenshots
-- Traces
-- Videos for failed tests
-- Test result summary
-
-Artifact handling:
-
-- Store only the artifacts needed for review.
-- Avoid retaining screenshots, traces, or videos that expose customer data, secrets, file contents, or credentials.
-- Set short retention periods for CI artifacts unless longer retention is explicitly required.
-
-### 6. Collect baseline artifacts
-
-Before modernization work begins, collect and save the baseline evidence.
-
-Artifacts to collect:
-
-- [ ] Passing Playwright report
-- [ ] Screenshots of key flows
-- [ ] Trace files for critical scenarios
-- [ ] Known failure list
-- [ ] Notes on legacy behavior that should not change without approval
-- [ ] CI run link or build summary
-
-Baseline completion criteria:
-
-- [ ] Core upload workflows are covered.
-- [ ] Tests run locally.
-- [ ] Tests run in CI.
-- [ ] Artifacts are available for review.
-- [ ] Known gaps are documented.
-- [ ] Team agrees this is the modernization safety net.
-
-Artifact review rules:
-
-- Redact or discard artifacts that expose sensitive data.
-- Keep failed-test videos and traces only when needed for diagnosis.
-- Confirm storage retention settings before enabling artifact upload in CI.
-
-### 7. Introduce the Playwright Orchestrator concept
-
-Present the "Playwright Orchestrator" as a demo concept only.
-
-Do not implement it in this section.
-
-Position it as a workflow layer around Playwright that uses GitHub Copilot custom agents to assist with test generation, analysis, and iteration.
-
-The orchestrator concept should:
-
-- Accept a modernization goal or user workflow.
-- Ask a GitHub Copilot custom agent to propose Playwright scenarios.
-- Ask a GitHub Copilot custom agent to generate or update Playwright tests.
-- Run the Playwright test suite.
-- Collect failures, traces, screenshots, and reports.
-- Feed results back into the next agent step.
-- Keep humans in control of review and approval.
-
-Demo framing:
-
-- Keep Playwright as the execution engine.
-- Use GitHub Copilot custom agents to assist with test generation, analysis, and iteration.
-- Use the orchestrator to coordinate the workflow.
-- The baseline tests are the source of truth.
-- No production code changes happen until the baseline is trusted.
-
-Suggested demo flow:
-
-1. Show the existing `legacy-upload-demo` behavior.
-2. Show the baseline Playwright scenarios.
-3. Explain that custom agents can propose additional coverage.
-4. Explain that the orchestrator would coordinate test generation and execution.
-5. Run the baseline tests.
-6. Review the Playwright report and artifacts.
-7. State that modernization work starts only after this safety net is established.

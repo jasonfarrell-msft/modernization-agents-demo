@@ -2,90 +2,63 @@
 
 ## Key message
 
-Baseline first. Modernization without a behavioral baseline is guessing.
+The demo is prompt-first: one operator prompt initiates baseline creation.
 
-## Why baseline first
+## Talk track
 
-- Establishes what the legacy app does today.
-- Separates intentional changes from accidental regressions.
-- Gives the team confidence before refactoring or replacing code.
-- Creates objective evidence for customer and engineering review.
-- Turns modernization into a controlled process instead of a rewrite gamble.
-
-## What Playwright gives us
-
-- End-to-end coverage of real user workflows.
-- Browser-based validation of current behavior.
-- Screenshots, traces, and videos for evidence.
-- Repeatable tests for local and CI runs.
-- A regression safety net before modernization begins.
+- We start with a baseline contract before any modernization.
+- The baseline run is orchestrated, not manual.
+- Playwright executes tests; GitHub Copilot custom agents accelerate scenario and test generation.
+- Human approval remains the release gate.
 
 ## Simple explanation: Playwright Orchestrator
 
-A Playwright Orchestrator is a coordination layer around Playwright.
+A Playwright Orchestrator is a workflow coordinator around Playwright.
 
-It does not replace Playwright.
+It does four things:
 
-It helps coordinate steps like:
+1. Accepts a high-level prompt.
+2. Routes work to GitHub Copilot custom agents (scenario generation, test generation, analysis).
+3. Runs Playwright and captures evidence.
+4. Returns a decision-ready summary for human approval.
 
-1. Understand the workflow.
-2. Ask an agent to propose test scenarios.
-3. Ask an agent to draft or update Playwright tests.
-4. Run the tests.
-5. Collect reports, traces, and screenshots.
-6. Use the results to guide the next iteration.
+## Customer-aligned response
 
-In practice:
+Use this when addressing the customer statement:
 
-- Playwright runs the tests.
-- GitHub Copilot custom agents assist with generation and analysis.
-- The orchestrator manages the sequence.
-- Humans approve changes.
+- "We use a prompt-first orchestration model."
+- "The orchestrator uses GitHub Copilot custom agents to generate and refine Playwright baseline tests."
+- "Playwright remains the execution engine and source of behavioral truth."
+- "We gate modernization behind a reviewed baseline contract."
 
-## How to address the customer comment
+## Suggested operator prompt for demo
 
-Customer said:
-
-> "I recently architected yet have not developed a Playwright Orchestrator utilizing GitHub Copilot custom agents to generate Playwright scripts, so I am interested in learning more about your approach and solutions."
-
-Suggested response:
-
-- "Our approach starts with the baseline. Before orchestrating generation, we establish trusted Playwright coverage for the legacy behavior."
-- "The orchestrator concept fits after that: agents can suggest scenarios, generate tests, analyze failures, and iterate."
-- "We keep Playwright as the execution layer and use custom agents as helpers in the workflow."
-- "We also treat Playwright artifacts carefully because screenshots, traces, and videos can expose sensitive data and increase CI storage cost."
-- "For this demo, we are not implementing the orchestrator yet. We are showing the foundation it would depend on."
+```text
+Establish a baseline test contract for legacy-upload-demo using Playwright.
+Scope current user-visible behavior only.
+Use GitHub Copilot custom agents to propose scenarios and generate baseline tests.
+Run the baseline suite, collect artifacts, and return a gap summary with risks.
+Do not modernize application code in this phase.
+```
 
 ## Likely Q&A
 
-### Q: Why not start with agent-generated tests immediately?
+### Q: Is this mostly manual?
 
-A: We can, but we still need a trusted baseline. Generated tests are only useful if we know what behavior they are protecting.
+A: No. The default flow is prompt-first orchestration. Manual steps are fallback only.
 
-### Q: What does the orchestrator actually do?
+### Q: What is automated vs human?
 
-A: It coordinates the loop: propose tests, generate tests, run Playwright, collect artifacts, analyze failures, and prepare the next action.
+A: Agents generate and analyze; Playwright executes; humans approve the baseline contract.
 
-### Q: Do custom agents replace test engineers?
+### Q: Why baseline first?
 
-A: No. They accelerate test creation and analysis. Humans still review intent, approve coverage, and decide what behavior matters.
+A: It creates a regression contract so modernization changes are intentional and measurable.
 
-### Q: Why Playwright instead of unit tests?
+### Q: What evidence do we show?
 
-A: For modernization, the first risk is breaking user-visible behavior. Playwright validates workflows in the browser, which makes it a strong baseline tool.
+A: Playwright report, traces, screenshots/videos for failures, and a gap summary.
 
-### Q: What artifacts matter most?
+### Q: Any security considerations?
 
-A: HTML reports, screenshots, traces, videos for failures, and a known-behavior notes list.
-
-### Q: When should modernization code changes begin?
-
-A: After the baseline runs locally, runs in CI, and the team agrees it covers the critical legacy workflows.
-
-### Q: How does this help with CI?
-
-A: CI turns the baseline into an automated gate. Every modernization change must preserve approved behavior unless the team intentionally changes it.
-
-### Q: What is the demo takeaway?
-
-A: Establish the Playwright baseline first. Then use orchestration and custom agents to scale test creation, analysis, and modernization confidence.
+A: Yes. We review artifacts for sensitive data and enforce retention limits to control exposure and cost.

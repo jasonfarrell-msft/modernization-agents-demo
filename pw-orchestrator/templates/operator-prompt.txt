@@ -3,6 +3,7 @@ Establish a modernization baseline contract for legacy-upload-demo using Playwri
 Constraints:
 - Scope current user-visible behavior only.
 - Do not modernize or refactor application code.
+- Use the provided Azure base URL. Do not switch to localhost.
 - Use GitHub Copilot custom agents to generate and refine baseline Playwright tests.
 - Keep humans in approval control.
 

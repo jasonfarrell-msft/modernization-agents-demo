@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TARGET_APP_REL="legacy-upload-demo/OgeFieldOps.Web"
-APP_URL="http://localhost:8080"
+APP_URL="https://vm-legacy-swc.swedencentral.cloudapp.azure.com/"
 MODE="scaffold"
 OUTPUT_ROOT="${SCRIPT_DIR}/runs"
 
@@ -20,7 +20,7 @@ Options:
   --target-app-rel PATH       app path relative to repo root
                               (default: legacy-upload-demo/OgeFieldOps.Web)
   --app-url URL               app URL to embed in generated assets
-                              (default: http://localhost:8080)
+                              (default: https://vm-legacy-swc.swedencentral.cloudapp.azure.com/)
   --output-root PATH          output folder for generated runs
                               (default: ./pw-orchestrator/runs)
   --help                      show help

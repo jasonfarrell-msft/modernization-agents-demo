@@ -4,9 +4,35 @@
 
 Run this section as an orchestrated workflow, not a manual checklist.
 
-### 1. Use the operator prompt
+### 1. Generate a baseline run package
 
-Start with a single prompt to the Playwright Orchestrator:
+From the repository root:
+
+```bash
+./pw-orchestrator/orchestrate-baseline.sh
+```
+
+Use the Azure-hosted app target, not localhost:
+
+```bash
+./pw-orchestrator/orchestrate-baseline.sh --app-url https://vm-legacy-swc.swedencentral.cloudapp.azure.com/
+```
+
+Use the generated run folder:
+
+```text
+pw-orchestrator/runs/<run-id>/
+```
+
+### 2. Execute the generated operator prompt
+
+Preferred: start a new GHCP session, then send the generated prompt from:
+
+```text
+pw-orchestrator/runs/<run-id>/operator-prompt.txt
+```
+
+It will look like this (values resolved for that run, not placeholders):
 
 ```text
 Establish a baseline test contract for legacy-upload-demo using Playwright.
@@ -16,7 +42,9 @@ Run the baseline suite, collect artifacts, and return a gap summary with risks.
 Do not modernize application code in this phase.
 ```
 
-### 2. Run the orchestrator phases
+If you stay in the current session, treat it as a new run and use only this run folder's artifacts.
+
+### 3. Run the orchestrator phases
 
 Require these phases in order:
 
@@ -28,14 +56,14 @@ Require these phases in order:
 6. Produce a baseline summary and known gaps.
 7. Pause for human approval.
 
-### 3. Enforce baseline scope rules
+### 4. Enforce baseline scope rules
 
 - [ ] Test user-visible behavior only.
 - [ ] Do not refactor app code.
 - [ ] Preserve known legacy quirks unless explicitly approved to change.
 - [ ] Treat baseline output as the regression contract for modernization.
 
-### 4. Set baseline scenario minimums
+### 5. Set baseline scenario minimums
 
 Require these scenarios at minimum:
 
@@ -49,7 +77,7 @@ Require these scenarios at minimum:
 - [ ] Success outcome is captured.
 - [ ] Error outcome is captured.
 
-### 5. Set artifact and security rules
+### 6. Set artifact and security rules
 
 Collect:
 
@@ -66,7 +94,7 @@ Enforce:
 - [ ] Keep only required artifacts.
 - [ ] Set short CI retention unless longer retention is explicitly required.
 
-### 6. Set CI baseline gate expectations
+### 7. Set CI baseline gate expectations
 
 - [ ] Run baseline Playwright tests on pull requests.
 - [ ] Fail PRs on baseline regressions.
@@ -79,7 +107,7 @@ Baseline command:
 npx playwright test
 ```
 
-### 7. Position the Playwright Orchestrator in the demo
+### 8. Position the Playwright Orchestrator in the demo
 
 Use this narrative:
 
@@ -88,7 +116,7 @@ Use this narrative:
 3. The orchestrator coordinates the end-to-end loop.
 4. Humans approve the baseline contract before modernization starts.
 
-### 8. Use fallback environment setup only when needed
+### 9. Use fallback environment setup only when needed
 
 Use manual setup only if the environment is not ready for orchestrated execution.
 

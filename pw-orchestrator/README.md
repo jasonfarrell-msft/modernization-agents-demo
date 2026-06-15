@@ -31,7 +31,7 @@ Most useful overrides:
 
 ```bash
 ./pw-orchestrator/orchestrate-baseline.sh \
-  --app-url http://localhost:5000 \
+  --app-url https://vm-legacy-swc.swedencentral.cloudapp.azure.com/ \
   --mode scaffold
 ```
 

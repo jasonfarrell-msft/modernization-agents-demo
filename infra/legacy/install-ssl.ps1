@@ -97,7 +97,7 @@ if (-not (Test-Path $rewriteDll)) {
     Remove-Item $msiPath -Force -ErrorAction SilentlyContinue
     Write-Host '  URL Rewrite installed.'
 } else {
-    Write-Host '  URL Rewrite already installed — skipped.'
+    Write-Host '  URL Rewrite already installed - skipped.'
 }
 
 # ---------------------------------------------------------------------------
@@ -115,7 +115,7 @@ if (-not (Test-Path $wacsExe)) {
     Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
     Write-Host "  win-acme extracted to: $WacsDir"
 } else {
-    Write-Host "  win-acme already present at: $wacsExe — skipped download."
+    Write-Host "  win-acme already present at: $wacsExe - skipped download."
 }
 
 # ---------------------------------------------------------------------------
@@ -126,11 +126,12 @@ Write-Host "  Site: '$SiteName' (ID $siteId)"
 Write-Host '  This requires port 80 to be reachable from the internet for the HTTP-01 challenge.'
 
 $wacsArgs = @(
-    '--target', 'iis',
+    '--source', 'manual',
     '--host', $Domain,
-    '--siteid', $siteId,
+    '--validation', 'selfhosting',
     '--store', 'certificatestore',
     '--installation', 'iis',
+    '--installationsiteid', $siteId,
     '--emailaddress', $ContactEmail,
     '--accepttos'
 )
@@ -143,7 +144,7 @@ Write-Host "  Certificate issued and HTTPS binding created on port 443."
 Write-Host "  A Windows Scheduled Task has been registered for automatic renewal."
 
 # ---------------------------------------------------------------------------
-# 5. Configure HTTP → HTTPS redirect via IIS URL Rewrite
+# 5. Configure HTTP -> HTTPS redirect via IIS URL Rewrite
 # ---------------------------------------------------------------------------
 Write-Step "Configuring HTTP to HTTPS redirect for site '$SiteName'..."
 
@@ -181,7 +182,7 @@ if (-not $rules) {
 # Check whether the rule already exists
 $existingRule = $rules.SelectSingleNode("rule[@name='$ruleName']")
 if ($existingRule) {
-    Write-Host "  Redirect rule '$ruleName' already present in web.config — skipped."
+    Write-Host "  Redirect rule '$ruleName' already present in web.config - skipped."
 } else {
     # Build the rule element
     $rule = $webConfig.CreateElement('rule')

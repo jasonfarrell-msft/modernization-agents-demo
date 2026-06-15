@@ -5,7 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TARGET_APP_REL="legacy-upload-demo/OgeFieldOps.Web"
 APP_URL="https://vm-legacy-swc.swedencentral.cloudapp.azure.com/"
-MODE="scaffold"
 OUTPUT_ROOT="${SCRIPT_DIR}/runs"
 
 usage() {
@@ -14,8 +13,6 @@ Usage:
   ./pw-orchestrator/orchestrate-baseline.sh [options]
 
 Options:
-  --mode scaffold|execute     scaffold = generate baseline package (default)
-                              execute  = scaffold + run Playwright if configured
   --repo-root PATH            repository root (default: parent of script dir)
   --target-app-rel PATH       app path relative to repo root
                               (default: legacy-upload-demo/OgeFieldOps.Web)
@@ -52,11 +49,6 @@ sanitize_value() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --mode)
-      require_value "$1" "${2:-}"
-      MODE="${2:-}"
-      shift 2
-      ;;
     --repo-root)
       require_value "$1" "${2:-}"
       REPO_ROOT="${2:-}"
@@ -88,11 +80,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-if [[ "${MODE}" != "scaffold" && "${MODE}" != "execute" ]]; then
-  echo "Invalid --mode value: ${MODE}" >&2
-  exit 1
-fi
 
 TARGET_APP_DIR="${REPO_ROOT}/${TARGET_APP_REL}"
 CONTROLLER_FILE="${TARGET_APP_DIR}/Controllers/OutagesController.cs"
@@ -199,10 +186,9 @@ cat > "${RUN_DIR}/runbook.sh" <<'EOF'
 set -euo pipefail
 
 echo "1) Send the prompt in operator-prompt.txt to your Playwright Orchestrator custom agent."
-echo "2) Ask it to return generated/updated Playwright tests and a baseline summary."
-echo "3) If tests are created in pw-orchestrator/playwright, run:"
-echo "   cd pw-orchestrator/playwright && ( [ -f package-lock.json ] && npm ci || npm install ) && npx playwright install && npx playwright test"
-echo "4) Collect artifacts and copy summary into baseline-contract.json fields."
+echo "2) Generate only. Do not run tests from the prompt."
+echo "3) Review generated tests under pw-orchestrator/playwright."
+echo "4) Keep generation output only: scenario matrix (targeted app areas), test file list, coverage intent."
 EOF
 chmod +x "${RUN_DIR}/runbook.sh"
 
@@ -211,34 +197,3 @@ echo "  - operator-prompt.txt"
 echo "  - baseline-contract.json"
 echo "  - evidence.txt"
 echo "  - runbook.sh"
-
-if [[ "${MODE}" == "execute" ]]; then
-  PLAYWRIGHT_DIR="${SCRIPT_DIR}/playwright"
-  if [[ ! -d "${PLAYWRIGHT_DIR}" || ! -f "${PLAYWRIGHT_DIR}/package.json" ]]; then
-    echo "Execute mode skipped: ${PLAYWRIGHT_DIR}/package.json not found."
-    exit 0
-  fi
-
-  if ! command -v npm >/dev/null 2>&1; then
-    echo "Execute mode skipped: npm not found." >&2
-    exit 1
-  fi
-
-  (
-    cd "${PLAYWRIGHT_DIR}"
-    if [[ ! -d node_modules ]]; then
-      echo "Installing npm dependencies in ${PLAYWRIGHT_DIR}..."
-      if [[ -f package-lock.json ]]; then
-        npm ci --quiet
-      else
-        npm install --quiet
-      fi
-    fi
-    if [[ ! -d "${HOME}/Library/Caches/ms-playwright" ]]; then
-      npx playwright install
-    fi
-
-    echo "Running Playwright with APP_URL=${APP_URL}"
-    APP_URL="${APP_URL}" npx playwright test
-  )
-fi

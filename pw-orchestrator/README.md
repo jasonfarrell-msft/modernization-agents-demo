@@ -21,6 +21,8 @@ From repository root:
 
 Use the generated `operator-prompt.txt` as the single prompt for your orchestrator workflow.
 
+For the demo flow, this is **generate-only**.
+
 ## Options
 
 ```bash
@@ -31,14 +33,5 @@ Most useful overrides:
 
 ```bash
 ./pw-orchestrator/orchestrate-baseline.sh \
-  --app-url https://vm-legacy-swc.swedencentral.cloudapp.azure.com/ \
-  --mode scaffold
+  --app-url https://vm-legacy-swc.swedencentral.cloudapp.azure.com/
 ```
-
-## Optional execute mode
-
-`--mode execute` will try to run Playwright in `pw-orchestrator/playwright` if that project exists.
-
-In execute mode, Playwright failures return a non-zero exit code.
-
-It is safe to start with `scaffold` mode for demo preparation.

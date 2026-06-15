@@ -6,6 +6,10 @@ Constraints:
 - Use the provided Azure base URL. Do not switch to localhost.
 - Use GitHub Copilot custom agents to generate and refine baseline Playwright tests.
 - Keep humans in approval control.
+- Generate-only mode: do not execute Playwright, unit tests, npm scripts, or shell test commands.
+- Use legacy-tolerant assertions. Do not assume one exact failure path.
+- Do not hard-code brittle selectors tied to exact outage ids or exact form action URLs.
+- Prefer resilient selectors and fallback checks for visible failure signals.
 
 Target context:
 - Base URL: {{APP_URL}}
@@ -16,15 +20,18 @@ Target context:
 
 Required workflow:
 1. Build a baseline scenario matrix for upload behavior.
-2. Ensure an outage record exists so upload scenarios can use a valid outage id.
-3. Generate or update Playwright baseline tests under pw-orchestrator/playwright only.
-4. Run tests and collect artifacts (report, traces, screenshots/videos for failures).
-5. Produce a gap summary with pass/fail/blocked status.
-6. Pause for human approval before any repo changes outside pw-orchestrator/playwright.
+2. Generate or update Playwright baseline tests under pw-orchestrator/playwright only.
+3. For oversized upload scenarios, generate assertions that allow accepted outcomes:
+   - stays on upload page with validation/error signal
+   - redirects to details/error page with visible failure signal
+   - request-level rejection with detectable failure signal
+4. Assert failure signal presence before page/form-specific structure checks.
+5. Annotate each scenario with accepted outcomes and primary/fallback assertions.
+6. Stop after generation. Do not run tests.
+7. Pause for human review.
 
 Required output:
 - Scenario matrix with priorities
 - Playwright test file list
-- Test execution summary
-- Risk and gap summary
-- Explicit human approval checkpoint
+- Coverage intent by scenario (planned, not executed)
+- Accepted outcomes and primary/fallback assertions by scenario

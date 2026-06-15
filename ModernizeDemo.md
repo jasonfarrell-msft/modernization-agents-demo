@@ -37,93 +37,54 @@ It will look like this (values resolved for that run, not placeholders):
 ```text
 Establish a baseline test contract for legacy-upload-demo using Playwright.
 Scope current user-visible behavior only.
-Use GitHub Copilot custom agents to propose scenarios and generate baseline tests.
-Run the baseline suite, collect artifacts, and return a gap summary with risks.
+Generate-only mode: generate or update baseline Playwright tests under pw-orchestrator/playwright.
+Do not execute Playwright, unit tests, npm scripts, or shell test commands.
+Use legacy-tolerant assertions and avoid hard-coded form-action/id selectors.
+For oversized upload, support accepted outcomes: upload-page validation, details/error-page failure signal, or request-level rejection signal.
+Pause and return only: scenario matrix (targeted app areas), test file list, coverage intent (planned only), and accepted outcomes with primary/fallback assertions.
 Do not modernize application code in this phase.
 ```
 
 If you stay in the current session, treat it as a new run and use only this run folder's artifacts.
 
-### 3. Run the orchestrator phases
+### 3. Confirm generate-only output
 
-Require these phases in order:
+After the operator prompt completes:
 
-1. Scope current behavior.
-2. Generate baseline scenarios.
-3. Generate or update baseline Playwright tests.
-4. Execute the baseline Playwright suite.
-5. Collect reports and diagnostics.
-6. Produce a baseline summary and known gaps.
-7. Pause for human approval.
+1. Review generated files under `pw-orchestrator/playwright`.
+2. Confirm the output includes only:
+   - Scenario matrix (targeted app areas)
+   - Playwright test file list
+   - Coverage intent (planned, not executed)
 
-### 4. Enforce baseline scope rules
+### 4. Prerequisites for VS Code test visualization and run
 
-- [ ] Test user-visible behavior only.
-- [ ] Do not refactor app code.
-- [ ] Preserve known legacy quirks unless explicitly approved to change.
-- [ ] Treat baseline output as the regression contract for modernization.
+Install and verify:
 
-### 5. Set baseline scenario minimums
+- [ ] Visual Studio Code
+- [ ] **Playwright Test for VS Code** extension
+- [ ] Node.js and npm available in terminal
 
-Require these scenarios at minimum:
-
-- [ ] Page loads successfully.
-- [ ] Upload form renders expected fields.
-- [ ] Valid file upload succeeds.
-- [ ] Invalid file type shows current error behavior.
-- [ ] Missing file submission shows current validation behavior.
-- [ ] Large file behavior is captured.
-- [ ] Cancel/reset behavior is captured (if present).
-- [ ] Success outcome is captured.
-- [ ] Error outcome is captured.
-
-### 6. Set artifact and security rules
-
-Collect:
-
-- Playwright HTML report
-- Screenshots
-- Traces
-- Videos for failures
-- Gap summary
-
-Enforce:
-
-- [ ] Review artifacts for sensitive data before sharing.
-- [ ] Redact or discard sensitive artifacts.
-- [ ] Keep only required artifacts.
-- [ ] Set short CI retention unless longer retention is explicitly required.
-
-### 7. Set CI baseline gate expectations
-
-- [ ] Run baseline Playwright tests on pull requests.
-- [ ] Fail PRs on baseline regressions.
-- [ ] Upload approved diagnostics for failed runs.
-- [ ] Keep retention and access controls aligned with security policy.
-
-Baseline command:
+From repo root, prepare Playwright dependencies:
 
 ```bash
-npx playwright test
-```
-
-### 8. Position the Playwright Orchestrator in the demo
-
-Use this narrative:
-
-1. Playwright is the test execution engine.
-2. GitHub Copilot custom agents handle scenario/test generation and analysis.
-3. The orchestrator coordinates the end-to-end loop.
-4. Humans approve the baseline contract before modernization starts.
-
-### 9. Use fallback environment setup only when needed
-
-Use manual setup only if the environment is not ready for orchestrated execution.
-
-Fallback setup:
-
-```bash
-cd legacy-upload-demo
-npm install
+cd pw-orchestrator/playwright
+( [ -f package-lock.json ] && npm ci || npm install )
 npx playwright install
 ```
+
+### 5. Visualize generated tests in VS Code
+
+1. Open folder: `pw-orchestrator/playwright`
+2. Open the **Testing** view (beaker icon).
+3. Expand the Playwright tree to show:
+   - test files
+   - suites
+   - test cases
+4. Use this tree as the visual map of what was generated and what app areas are targeted.
+
+### 6. Run tests from VS Code
+
+1. In **Testing**, click **Run All Tests** (play button), or run a single file/suite/test.
+2. Review pass/fail status in the Testing panel.
+3. Open failure details from Testing output and Playwright artifacts as needed.

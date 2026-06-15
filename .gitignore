@@ -41,6 +41,7 @@ bld/
 *.db
 *.db-shm
 *.db-wal
+.playwright-mcp/
 
 # Generated infra parameters can contain secrets; use .bicepparam + environment/GitHub secrets.
 infra/**/*.parameters.json

@@ -269,7 +269,7 @@ Ensure the client standards sources are available to the agent before running an
 
 ```bash
 dotnet build mcp-servers/dotnet-patterns-mcp/PatternsMcp.Server.csproj
-PATTERNS_PATH=/Users/jasonfarrell/Projects/modernization-demo/dotnet-patterns \
+PATTERNS_PATH=/Users/jasonfarrell/Projects/modernization-agents-demo/dotnet-patterns \
 dotnet run --project mcp-servers/dotnet-patterns-mcp --no-build
 ```
 

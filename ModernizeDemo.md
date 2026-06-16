@@ -57,15 +57,9 @@ After the operator prompt completes:
    - Playwright test file list
    - Coverage intent (planned, not executed)
 
-### 4. Prerequisites for VS Code test visualization and run
+### 4. List generated tests from the terminal
 
-Install and verify:
-
-- [ ] Visual Studio Code
-- [ ] **Playwright Test for VS Code** extension
-- [ ] Node.js and npm available in terminal
-
-From repo root, prepare Playwright dependencies:
+From repo root, prepare Playwright dependencies and list all tests:
 
 ```bash
 cd pw-orchestrator/playwright
@@ -73,21 +67,52 @@ cd pw-orchestrator/playwright
 npx playwright install
 ```
 
-### 5. Visualize generated tests in VS Code
+List all available tests:
 
-1. Open folder: `pw-orchestrator/playwright`
-2. Open the **Testing** view (beaker icon).
-3. Expand the Playwright tree to show:
-   - test files
-   - suites
-   - test cases
-4. Use this tree as the visual map of what was generated and what app areas are targeted.
+```bash
+npx playwright test --list
+```
 
-### 6. Run tests from VS Code
+This will show:
+- test files
+- suites within each file
+- individual test cases
 
-1. In **Testing**, click **Run All Tests** (play button), or run a single file/suite/test.
-2. Review pass/fail status in the Testing panel.
-3. Open failure details from Testing output and Playwright artifacts as needed.
+### 5. Run tests from the terminal
+
+Run all tests:
+
+```bash
+npx playwright test
+```
+
+Run a specific test file:
+
+```bash
+npx playwright test tests/upload.baseline.spec.ts
+```
+
+Run tests in headed mode (see the browser):
+
+```bash
+npx playwright test --headed
+```
+
+Run tests with verbose output:
+
+```bash
+npx playwright test --verbose
+```
+
+Review test results in the HTML report generated after the run:
+
+```bash
+npx playwright show-report
+```
+
+### 6. Review generated test artifacts
+
+After tests complete, inspect the generated test and coverage artifacts under `pw-orchestrator/playwright/`.
 
 ## Section 2a: Modernize with GitHub Modernization Agent
 

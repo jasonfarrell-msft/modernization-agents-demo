@@ -33,6 +33,34 @@ Using DI containers for loose coupling and testability.
 - Keyed services
 - Testing with mocks
 
+### [Observability & Diagnostics](./observability-diagnostics/)
+Operational visibility patterns for cloud-native .NET services.
+- Structured logging with correlation IDs
+- OpenTelemetry tracing and metrics
+- Health checks and readiness probes
+- Alert-friendly error signals
+
+### [Error Handling & Resilience](./error-handling-resilience/)
+Resilience patterns for transient failures and dependency instability.
+- Timeouts, retries, and circuit breakers
+- Idempotency and safe retry boundaries
+- Exception mapping and problem details
+- Bulkheads and fallback behavior
+
+### [Class Separation & SRP](./class-separation-srp/)
+Practical guidance for splitting responsibilities into focused classes.
+- Application orchestration vs domain logic
+- Infrastructure boundary isolation
+- Constructor size and cohesion checks
+- Test seam creation
+
+### [Naming Conventions & Code Organization](./naming-conventions/)
+Consistent naming and layout standards for team-scale maintainability.
+- Project and namespace conventions
+- Type/member naming rules
+- Folder-by-feature organization
+- Avoiding ambiguous abbreviations
+
 ### [Testing Patterns](./testing-patterns/)
 Comprehensive unit and integration testing strategies.
 - Unit test structure (Arrange-Act-Assert)
@@ -140,7 +168,7 @@ When a new pattern emerges:
 2. Add `README.md` following the pattern template
 3. Add example code in `examples/` subdirectory
 4. Create `CHECKLIST.md` for validation
-5. Update this index (patterns-index.md)
+5. Update this index (`README.md`)
 6. Review with Technical Leadership
 
 ---
@@ -149,13 +177,13 @@ When a new pattern emerges:
 
 As you apply patterns, update the adoption matrix:
 
-| Service | Clean Arch | SOLID | Async | DI | Testing | API Design |
-|---------|-----------|-------|-------|----|---------|----|
-| Catalog.API | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 |
-| Basket.API | 🟡 | 🟡 | 🟡 | 🔴 | 🟡 | 🟢 |
-| Ordering.API | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 |
-| Identity.API | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | 🟢 |
-| WebApp | 🟡 | 🟡 | 🟢 | 🟡 | 🟡 | N/A |
+| Service | Clean Arch | SOLID | Async | DI | Obs/Diag | Resilience | SRP | Naming | Testing | API Design |
+|---------|------------|-------|-------|----|----------|------------|-----|--------|---------|------------|
+| Catalog.API | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🟡 | 🟢 | 🟡 | 🟢 | 🟢 |
+| Basket.API | 🟡 | 🟡 | 🟡 | 🔴 | 🔴 | 🔴 | 🟡 | 🟡 | 🟡 | 🟢 |
+| Ordering.API | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 |
+| Identity.API | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | 🟢 |
+| WebApp | 🟡 | 🟡 | 🟢 | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | 🟡 | N/A |
 
 Legend:
 - 🟢 Fully adopted

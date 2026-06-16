@@ -89,17 +89,18 @@ npx playwright install
 2. Review pass/fail status in the Testing panel.
 3. Open failure details from Testing output and Playwright artifacts as needed.
 
-## Section 2: Modernize for .NET 10 + Azure Red Hat OpenShift
+## Section 2a: Modernize with GitHub Modernization Agent
 
-Use the GitHub Modernization Agent to produce modernization changes only. Do not deploy in this section.
+Use the GitHub Modernization Agent to produce modernization changes and deployment artifacts with a container as the end state.
 
 ### 1. Set modernization target and constraints
 
 Target state:
 
 - [ ] Application targets **.NET 10**.
-- [ ] Application is container-ready for **Azure Red Hat OpenShift (ARO)**.
+- [ ] Application is packaged as a **container** suitable for Azure deployment.
 - [ ] Legacy persistence services are replaced with modern equivalents.
+- [ ] Deployment artifacts exist for **Azure Container Apps (ACA)** in a chosen resource group.
 
 Persistence modernization requirements:
 
@@ -120,25 +121,37 @@ Security and platform requirements:
 Use this prompt:
 
 ```text
-Modernize legacy-upload-demo for containerized deployment on Azure Red Hat OpenShift.
+Modernize legacy-upload-demo into a containerized .NET 10 application for Azure deployment.
 
-Requirements:
+Execution mode (non-negotiable):
+- Demo speed mode: prioritize execution speed over process overhead.
+- Automatic flow: do not pause for stage approvals unless blocked by missing required input.
+- Use safe defaults for non-critical decisions; do not ask preference questions when a reasonable default exists.
+- If a workflow tool times out twice or is unavailable, immediately use the closest direct implementation path and continue.
+- No exploratory loops or optional review-agent passes unless explicitly requested.
+
+Scope and safety:
+- Create all modernization implementation in a new sibling directory: legacy-upload-demo-container
+- Do not modify files under the existing legacy-upload-demo application tree.
+- Keep user-visible behavior aligned with the Playwright baseline contract.
+
+Technical requirements:
 - Target .NET 10.
-- Replace legacy persistence patterns with modern cloud-native equivalents:
+- Replace legacy persistence patterns with cloud-native equivalents:
   - local file upload storage -> object storage abstraction
   - on-prem SQL access -> managed cloud database access
   - SMTP pickup/file-drop notifications -> managed messaging/notification integration
   - local audit file logging -> centralized structured telemetry/logging
 - Remove machine-bound assumptions and make the app stateless for container scale-out.
-- Externalize configuration and secrets; use Managed Identity where possible.
-- Produce Dockerfile/containerization updates and OpenShift-ready runtime configuration.
-- Keep behavior aligned with baseline tests.
+- Externalize configuration/secrets and use Managed Identity where possible.
+- Produce Dockerfile/containerization updates and Azure-ready runtime configuration.
+- Produce Bicep deployment artifacts for Azure Container Apps targeting a specified resource group.
 
 Output only:
-1) Change plan
+1) Change plan (implementation-focused, no exploratory alternatives)
 2) File-by-file modifications
-3) Infrastructure/runtime config changes needed for ARO readiness
-4) Risks and any manual follow-up items
+3) Infrastructure/runtime config changes needed for container and ACA deployment
+4) Risks and manual follow-up items
 ```
 
 ### 3. Review generated modernization output before applying
@@ -147,13 +160,219 @@ Confirm:
 
 - [ ] .NET 10 target is explicit.
 - [ ] Persistence replacements are explicitly mapped (old -> new).
-- [ ] Containerization artifacts are present and OpenShift-compatible.
+- [ ] Containerization artifacts are present.
+- [ ] ACA deployment artifacts are called out.
+- [ ] Local run instructions exist for `legacy-upload-demo-container`.
+- [ ] Carried-forward Playwright tests can target a local base URL for the modernized app.
 - [ ] No plaintext secrets are introduced.
 - [ ] Baseline behavior compatibility is called out.
 
 ### 4. Apply generated changes and validate against baseline
 
 1. Apply the generated modernization changes.
-2. Run the existing baseline Playwright tests.
-3. Record pass/fail and gaps.
-4. Keep remediation items separate from this section's generated output.
+2. Start `legacy-upload-demo-container` locally.
+3. Run the carried-forward Playwright baseline tests against the local modernized app URL.
+4. Record pass/fail and gaps.
+5. Keep remediation items separate from this section's generated output.
+
+## Section 2b: Custom Agent Modernization
+
+### 0. Start standards context locally (required before Section 2b prompts)
+
+Ensure the client standards sources are available to the agent before running any Section 2b modernization prompts.
+
+1. Start the local `dotnet-patterns` MCP server:
+
+```bash
+dotnet build mcp-servers/dotnet-patterns-mcp/PatternsMcp.Server.csproj
+PATTERNS_PATH=/Users/jasonfarrell/Projects/modernization-demo/dotnet-patterns \
+dotnet run --project mcp-servers/dotnet-patterns-mcp --no-build -c Release
+```
+
+2. Ensure the **improve** skill exists at user scope so it is available across projects (no git clone path):
+
+Use this prompt in Copilot Chat:
+
+```text
+Create or update a local user-scoped skill named "improve" at ~/.github/skills/improve using the contents/spec from https://github.com/shadcn/improve.
+
+Constraints:
+- Do not run git clone, git pull, or any git-based sync command.
+- If ~/.github/skills/improve already exists, update files in place to match the latest skill structure.
+- If it does not exist, create the folder and required skill files directly.
+- Preserve local file permissions and avoid touching unrelated folders.
+
+Return only:
+1) Files created/updated
+2) Any manual follow-up needed
+```
+
+3. Confirm both are ready:
+   - MCP server process is running and reachable by your MCP-capable client.
+   - `~/.github/skills/improve` exists locally.
+
+### 1. Create the modernization plan with the improve skill
+
+Use the **improve** skill to produce the plan only. Do not generate implementation in this step.
+
+Use this prompt:
+
+```text
+Use the improve skill to create a modernization plan only for legacy-upload-demo.
+
+Execution boundary:
+- Source folder is read-only: legacy-upload-demo
+- Destination folder must be a new sibling directory named exactly: legacy-upload-improve
+- Do not modify legacy-upload-demo, pw-orchestrator/playwright, dotnet-patterns, or shared repo-level configuration in this planning step
+- Do not create, edit, move, delete, or format files in this step
+
+Planning goals:
+- Modernize the application into legacy-upload-improve
+- Preserve current user-visible behavior defined by the Playwright baseline contract
+- Bring the existing Playwright baseline tests forward as validation assets for the modernized app
+- End state must produce a containerized application deployable to Azure Container Apps
+
+Required planning coverage:
+- target framework and project structure
+- container build/runtime approach
+- local run instructions for the modernized app
+- configuration and secret externalization
+- storage/persistence modernization
+- authentication/authorization approach
+- observability and diagnostics
+- error handling and resilience
+- class separation / SRP improvements
+- naming conventions and code organization
+- test migration/carry-forward approach for Playwright
+- local Playwright execution against a configurable base URL
+- ACA deployment artifacts and deployment prerequisites
+- Service Principal scope and least-privilege deployment requirements
+
+Output only:
+1) modernization phases
+2) file/folder creation plan for legacy-upload-improve
+3) dependency/package plan
+4) containerization plan
+5) ACA deployment plan (Bicep + deployment identity flow)
+6) risk list
+7) validation plan tied to the existing Playwright baseline
+```
+
+### 2. Review the plan before execution
+
+Confirm the plan explicitly states:
+
+- [ ] `legacy-upload-demo` remains unchanged
+- [ ] all new implementation goes into `legacy-upload-improve`
+- [ ] Playwright tests are carried forward and not regenerated as a weaker contract
+- [ ] `legacy-upload-improve` must run locally before deployment work begins
+- [ ] carried-forward Playwright tests must run against a local base URL for `legacy-upload-improve`
+- [ ] container target is Azure Container Apps deployable
+- [ ] client standards are applied through MCP-backed pattern guidance
+
+### 3. Execute the modernization plan with the dotnet-patterns MCP server
+
+Run the implementation step only after the MCP server from Step 0 is available.
+
+Use this prompt:
+
+```text
+Implement the approved modernization plan using the local dotnet-patterns MCP server as a required standards source.
+
+Execution boundary:
+- Read from: legacy-upload-demo
+- Write only to: legacy-upload-improve
+- Do not modify legacy-upload-demo
+- Do not modify pw-orchestrator/playwright baseline tests
+- Do not weaken assertions or alter tests to make the modernization pass
+- If the dotnet-patterns MCP server is unavailable, stop and report that blocker instead of continuing
+
+Required MCP usage:
+- Query the local dotnet-patterns MCP server before implementation
+- Use the pattern guidance as a hard constraint, not optional reference
+- Cite which pattern areas were applied during implementation decisions
+- At minimum, review and apply guidance from:
+  - managed-identity
+  - dependency-injection
+  - observability-diagnostics
+  - error-handling-resilience
+  - class-separation-srp
+  - naming-conventions
+
+Implementation goals:
+- Create a modernized application in legacy-upload-improve
+- Keep user-visible behavior aligned with the existing Playwright baseline
+- Bring over the Playwright test assets needed to validate the modernized app
+- Ensure the modernized app can be started locally for validation
+- Ensure the carried-forward Playwright tests can target the app through a configurable local base URL
+- Produce a containerized application suitable for Azure Container Apps deployment
+- Externalize configuration and avoid hardcoded secrets, keys, or user-specific paths
+- Produce Bicep deployment artifacts targeting a specified resource group
+- Prepare deployment steps for a newly created deployment-only Service Principal
+
+Output only:
+1) files created/updated under legacy-upload-improve
+2) pattern categories applied and where they influenced the design
+3) container/runtime notes
+4) ACA/Bicep deployment artifacts and where they live
+5) validation steps to run the carried-forward Playwright baseline against the modernized app
+6) blockers or follow-up items
+```
+
+### 4. Validate execution boundaries after generation
+
+Before applying or reviewing generated changes, confirm:
+
+- [ ] no files were changed under `legacy-upload-demo`
+- [ ] all modernization output is under `legacy-upload-improve`
+- [ ] baseline Playwright tests were preserved as the validation contract
+- [ ] MCP pattern guidance is reflected in the generated output
+- [ ] container and ACA deployment artifacts are present
+- [ ] `legacy-upload-improve` can run locally
+- [ ] carried-forward Playwright tests can run locally against `legacy-upload-improve`
+
+## Section 3: Manual Container Deployment to Azure Container Apps
+
+Trigger deployment manually only after choosing which app to deploy.
+
+### 1. Select the deployment target
+
+Choose exactly one:
+
+- `legacy-upload-demo-container`
+- `legacy-upload-improve`
+
+Do not infer a default target.
+
+### 2. Prepare deployment setup
+
+Use this prompt:
+
+```text
+Prepare the final manual deployment path to Azure Container Apps for a selected app target (`legacy-upload-demo-container` or `legacy-upload-improve`) using a newly created deployment-only Service Principal and Bicep.
+
+Constraints:
+- Deployment is manual-only. Do not auto-deploy as part of modernization or planning.
+- Require the operator to explicitly provide the chosen app target before producing deploy commands.
+- Do not hardcode, print, commit, or persist Service Principal secrets, tokens, or credentials in repository files
+- Scope the Service Principal to the desired resource group only
+- Do not use Owner; use least-privilege RBAC suitable for ACA/Bicep deployment
+- If any required deployment identity inputs are missing, stop and report them instead of inventing defaults
+- Use the local dotnet-patterns MCP server guidance where relevant for managed identity, diagnostics, resilience, and naming
+
+Required deployment coverage:
+- Service Principal creation command(s)
+- Required environment variables for secure local use
+- Bicep for ACA environment, Container App, ingress, configuration, and diagnostics
+- Parameterization for resource group, location, container image, and app settings
+- Validation and deployment commands
+- Post-deployment smoke-test steps
+- Explicit prerequisite that the selected app has already passed local Playwright validation
+
+Output only:
+1) Service Principal creation steps
+2) Bicep files and parameters required
+3) Validation and deployment commands for the chosen resource group
+4) Post-deployment verification steps
+5) Any manual secrets/configuration that must be supplied securely outside the repo
+```

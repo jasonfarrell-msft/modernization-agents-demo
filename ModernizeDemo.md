@@ -181,21 +181,6 @@ After Copilot finishes, confirm both files exist:
 - [ ] `MODERNIZATION_PATTERNS.md` created
 - [ ] `AGENTS.md` created
 
-#### Step 2: Exclude generated pattern files from git tracking
-
-Add these files to `.gitignore` so they are never committed:
-
-```bash
-echo -e "\n# Generated modernization pattern files (temporary references)\nMODERNIZATION_PATTERNS.md\nAGENTS.md" >> .gitignore
-```
-
-Verify:
-```bash
-git status | grep -E "MODERNIZATION_PATTERNS|AGENTS.md"
-```
-
-Expected: both files appear as untracked.
-
 ### 1. Set modernization target and constraints
 
 Target state:

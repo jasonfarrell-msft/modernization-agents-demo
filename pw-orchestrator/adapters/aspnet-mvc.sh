@@ -54,7 +54,7 @@ if [[ -d "${CONTROLLERS_DIR}" ]]; then
     fi
   done
 
-  # Find upload route patterns
+  # Find upload route patterns and derive list route
   for controller in "${CONTROLLERS_DIR}"/*.cs; do
     [[ -f "${controller}" ]] || continue
 
@@ -63,6 +63,11 @@ if [[ -d "${CONTROLLERS_DIR}" ]]; then
       # Normalize numeric IDs to {id} placeholder
       upload_route="$(printf '%s' "${upload_route}" | sed -E 's|/[0-9]+$|/{id}|')"
       discover "UPLOAD_ROUTE" "${upload_route}" "$(basename "${controller}")/route-comment"
+
+      # Derive list route: the controller's base path (first segment)
+      # e.g. /Outages/Upload/{id} → /Outages
+      controller_base="$(printf '%s' "${upload_route}" | sed -E 's|^(/[^/]+).*|\1|')"
+      discover "LIST_ROUTE" "${controller_base}" "derived from UPLOAD_ROUTE"
       break
     fi
   done

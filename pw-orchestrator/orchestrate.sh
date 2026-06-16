@@ -111,6 +111,7 @@ allowed_extensions="$(echo "${DISCOVERED_ENV}" | sed -n 's/^ALLOWED_EXTENSIONS=/
 max_upload_mb="$(echo "${DISCOVERED_ENV}" | sed -n 's/^MAX_UPLOAD_MB=//p' | head -n1)"
 validation_error="$(echo "${DISCOVERED_ENV}" | sed -n 's/^VALIDATION_ERROR=//p' | head -n1)"
 upload_route="$(echo "${DISCOVERED_ENV}" | sed -n 's/^UPLOAD_ROUTE=//p' | head -n1)"
+list_route="$(echo "${DISCOVERED_ENV}" | sed -n 's/^LIST_ROUTE=//p' | head -n1)"
 
 # Apply defaults and report which values are discovered vs defaulted
 echo ""
@@ -124,19 +125,32 @@ apply_default() {
   fi
 }
 
-allowed_extensions="$(apply_default "ALLOWED_EXTENSIONS" "${allowed_extensions}" ".pdf,.csv,.txt,.jpg,.jpeg,.png,.xlsx")"
-max_upload_mb="$(apply_default "MAX_UPLOAD_MB" "${max_upload_mb}" "25")"
-validation_error="$(apply_default "VALIDATION_ERROR" "${validation_error}" "Please choose a file to upload.")"
-upload_route="$(apply_default "UPLOAD_ROUTE" "${upload_route}" "/Upload/{id}")"
+allowed_extensions="$(apply_default "ALLOWED_EXTENSIONS" "${allowed_extensions}" "")"
+max_upload_mb="$(apply_default "MAX_UPLOAD_MB" "${max_upload_mb}" "")"
+validation_error="$(apply_default "VALIDATION_ERROR" "${validation_error}" "")"
+upload_route="$(apply_default "UPLOAD_ROUTE" "${upload_route}" "")"
+list_route="$(apply_default "LIST_ROUTE" "${list_route}" "")"
+
+# Verify critical values were discovered
+missing=()
+[[ -z "${upload_route}" ]] && missing+=("UPLOAD_ROUTE")
+[[ -z "${list_route}" ]] && missing+=("LIST_ROUTE")
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo ""
+  echo "  ERROR: Adapter did not discover required values: ${missing[*]}" >&2
+  echo "  Provide them via --app-url or check your adapter and app source path." >&2
+  exit 1
+fi
 
 echo ""
 echo "  Final configuration:"
 echo "    App URL:            ${APP_URL}"
 echo "    App name:           ${APP_NAME}"
+echo "    List route:         ${list_route}"
 echo "    Upload route:       ${upload_route}"
-echo "    Allowed extensions: ${allowed_extensions}"
-echo "    Max upload (MB):    ${max_upload_mb}"
-echo "    Validation message: ${validation_error}"
+echo "    Allowed extensions: ${allowed_extensions:-<not discovered>}"
+echo "    Max upload (MB):    ${max_upload_mb:-<not discovered>}"
+echo "    Validation message: ${validation_error:-<not discovered>}"
 
 ###############################################################################
 # Stage 2: CONFIGURE
@@ -149,6 +163,7 @@ echo "════════════════════════�
 cat > "${PLAYWRIGHT_DIR}/.env" <<EOF
 APP_URL=${APP_URL}
 APP_NAME=${APP_NAME}
+LIST_ROUTE=${list_route}
 UPLOAD_ROUTE=${upload_route}
 ALLOWED_EXTENSIONS=${allowed_extensions}
 MAX_UPLOAD_MB=${max_upload_mb}

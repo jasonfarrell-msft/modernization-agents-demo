@@ -15,11 +15,8 @@ import { getConfig } from '../../helpers/discovery';
  */
 export async function navigateToUploadPage(page: Page): Promise<void> {
   const config = getConfig();
-  // Derive list path from upload route: /Outages/Upload/{id} → /Outages
-  const segments = config.uploadRoute.split('/').filter(Boolean);
-  const listPath = '/' + segments[0] || '/Outages';
 
-  await page.goto(listPath);
+  await page.goto(config.listRoute);
   const uploadLink = page.getByRole('link', { name: 'Upload' }).first();
   await uploadLink.click();
   await page.getByRole('heading', { name: /upload/i }).waitFor();
@@ -39,10 +36,11 @@ export function uploadPagePattern(): RegExp {
 
 /**
  * Get the URL pattern for the details/success page after upload.
+ * This is app-specific knowledge about the legacy-upload-demo's routing convention.
  */
 export function detailsPagePattern(): RegExp {
   const config = getConfig();
-  // Derive details route from upload route: /Outages/Upload/{id} -> /Outages/Details/{id}
+  // App-specific: this app uses /Controller/Details/{id} alongside /Controller/Upload/{id}
   const detailsRoute = config.uploadRoute.replace(/\/[^/]+\/\{id\}$/, '/Details/{id}');
   const escaped = detailsRoute
     .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

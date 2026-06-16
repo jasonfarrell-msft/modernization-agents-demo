@@ -32,6 +32,8 @@ Preferred: start a new GHCP session, then send the generated prompt from:
 pw-orchestrator/runs/<run-id>/operator-prompt.txt
 ```
 
+**Model Recommendation:** Use a frontier model (Claude Opus 4.6+ or GPT-5.3+) for this step. The test generation prompt is reasoning-heavy and requires understanding of multiple acceptance criteria, legacy quirks, resilient selectors, and error handling paths. Frontier models produce significantly better test coverage with less churn and iteration. Older/smaller models (e.g., Haiku) tend to generate brittle tests and require multiple refinement passes.
+
 It will look like this (values resolved for that run, not placeholders):
 
 ```text

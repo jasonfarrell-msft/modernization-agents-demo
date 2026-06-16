@@ -12,7 +12,9 @@ test.describe('Valid Upload', () => {
 
     // Should redirect to details page with success message
     await page.waitForURL(/\/Outages\/Details\/\d+/);
-    await expect(page.getByText(fileName)).toBeVisible();
+    // Scope to the documents table to avoid strict-mode ambiguity with the flash alert
+    const docsTable = page.locator('table').filter({ hasText: 'File' });
+    await expect(docsTable.getByRole('cell', { name: fileName })).toBeVisible();
   });
 
   test('successfully uploads a CSV file', async ({ page }) => {
@@ -24,7 +26,8 @@ test.describe('Valid Upload', () => {
     await uploadFile(page, fileName, content, 'text/csv');
 
     await page.waitForURL(/\/Outages\/Details\/\d+/);
-    await expect(page.getByText(fileName)).toBeVisible();
+    const docsTable = page.locator('table').filter({ hasText: 'File' });
+    await expect(docsTable.getByRole('cell', { name: fileName })).toBeVisible();
   });
 
   test('uploaded file appears in documents table', async ({ page }) => {

@@ -13,7 +13,7 @@ test.describe('Upload Form', () => {
 
   test('upload form shows outage ticket number', async ({ page }) => {
     await navigateToUploadPage(page);
-    // The page should display the outage ticket reference
-    await expect(page.getByText(/outage/i)).toBeVisible();
+    // The page should display the outage ticket reference (e.g. "Outage OUT-2026-0001")
+    await expect(page.getByText(/Outage\s+OUT-\d{4}-\d+/i)).toBeVisible();
   });
 });

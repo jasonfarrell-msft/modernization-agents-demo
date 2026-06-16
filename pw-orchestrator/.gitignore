@@ -1,3 +1,8 @@
-runs/
-!runs/.gitkeep
-playwright/
+# Orchestrator runtime artifacts
+results/
+playwright/node_modules/
+playwright/.env
+
+# Playwright output
+playwright/test-results/
+playwright/playwright-report/

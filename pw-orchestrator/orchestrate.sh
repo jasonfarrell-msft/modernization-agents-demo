@@ -73,6 +73,12 @@ if [[ ! "${ADAPTER}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
   exit 1
 fi
 
+# Validate app name (prevent path traversal)
+if [[ ! "${APP_NAME}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo "ERROR: Invalid app name '${APP_NAME}'. Must be alphanumeric with hyphens/underscores." >&2
+  exit 1
+fi
+
 # Resolve app source: support absolute paths or paths relative to repo root
 if [[ "${TARGET_APP_REL}" == /* ]]; then
   TARGET_APP_DIR="${TARGET_APP_REL}"
@@ -116,37 +122,34 @@ if [[ ! -d "${TARGET_APP_DIR}" ]]; then
   exit 1
 fi
 
-# Run adapter — it outputs KEY=VALUE pairs to stdout, logs to stderr
-DISCOVERED_VARS="$(bash "${ADAPTER_SCRIPT}" "${TARGET_APP_DIR}" 2>&1 1>/dev/null || true)"
-DISCOVERED_ENV="$(bash "${ADAPTER_SCRIPT}" "${TARGET_APP_DIR}" 2>/dev/null || true)"
+mkdir -p "${RESULTS_DIR}"
 
-# Print adapter log (sent to stderr, captured above)
-echo "${DISCOVERED_VARS}"
-
-# Parse discovered values, apply defaults for anything not found
-allowed_extensions="$(echo "${DISCOVERED_ENV}" | sed -n 's/^ALLOWED_EXTENSIONS=//p' | head -n1)"
-max_upload_mb="$(echo "${DISCOVERED_ENV}" | sed -n 's/^MAX_UPLOAD_MB=//p' | head -n1)"
-validation_error="$(echo "${DISCOVERED_ENV}" | sed -n 's/^VALIDATION_ERROR=//p' | head -n1)"
-upload_route="$(echo "${DISCOVERED_ENV}" | sed -n 's/^UPLOAD_ROUTE=//p' | head -n1)"
-list_route="$(echo "${DISCOVERED_ENV}" | sed -n 's/^LIST_ROUTE=//p' | head -n1)"
-
-# Apply defaults and report which values are discovered vs defaulted
-echo ""
-apply_default() {
-  local key="$1" value="$2" default="$3"
-  if [[ -z "${value}" ]]; then
-    echo "  ⚠ ${key}: using default (${default})"
-    printf '%s' "${default}"
-  else
-    printf '%s' "${value}"
-  fi
+# Run adapter once — capture stdout (KEY=VALUE) and stderr (logs) separately
+ADAPTER_OUTPUT="$(bash "${ADAPTER_SCRIPT}" "${TARGET_APP_DIR}" 2>"${RESULTS_DIR}/adapter.log")" || {
+  echo "  ERROR: Adapter '${ADAPTER}' failed. Log:" >&2
+  cat "${RESULTS_DIR}/adapter.log" >&2
+  exit 1
 }
 
-allowed_extensions="$(apply_default "ALLOWED_EXTENSIONS" "${allowed_extensions}" "")"
-max_upload_mb="$(apply_default "MAX_UPLOAD_MB" "${max_upload_mb}" "")"
-validation_error="$(apply_default "VALIDATION_ERROR" "${validation_error}" "")"
-upload_route="$(apply_default "UPLOAD_ROUTE" "${upload_route}" "")"
-list_route="$(apply_default "LIST_ROUTE" "${list_route}" "")"
+# Print adapter log
+cat "${RESULTS_DIR}/adapter.log"
+
+# Parse discovered values
+allowed_extensions="$(echo "${ADAPTER_OUTPUT}" | sed -n 's/^ALLOWED_EXTENSIONS=//p' | head -n1)"
+max_upload_mb="$(echo "${ADAPTER_OUTPUT}" | sed -n 's/^MAX_UPLOAD_MB=//p' | head -n1)"
+validation_error="$(echo "${ADAPTER_OUTPUT}" | sed -n 's/^VALIDATION_ERROR=//p' | head -n1)"
+upload_route="$(echo "${ADAPTER_OUTPUT}" | sed -n 's/^UPLOAD_ROUTE=//p' | head -n1)"
+list_route="$(echo "${ADAPTER_OUTPUT}" | sed -n 's/^LIST_ROUTE=//p' | head -n1)"
+
+# Report which optional values were not discovered (warnings to stderr only)
+echo ""
+for pair in "ALLOWED_EXTENSIONS:${allowed_extensions}" "MAX_UPLOAD_MB:${max_upload_mb}" "VALIDATION_ERROR:${validation_error}"; do
+  key="${pair%%:*}"
+  val="${pair#*:}"
+  if [[ -z "${val}" ]]; then
+    echo "  ⚠ ${key}: not discovered (tests depending on it may be skipped)" >&2
+  fi
+done
 
 # Verify critical values were discovered
 missing=()

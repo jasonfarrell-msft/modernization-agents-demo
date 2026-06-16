@@ -17,7 +17,18 @@ export async function navigateToUploadPage(page: Page): Promise<void> {
   const config = getConfig();
 
   await page.goto(config.listRoute);
+
+  // Preflight: verify the list page has at least one Upload link
   const uploadLink = page.getByRole('link', { name: 'Upload' }).first();
+  const linkCount = await page.getByRole('link', { name: 'Upload' }).count();
+  if (linkCount === 0) {
+    throw new Error(
+      `No "Upload" links found on ${config.listRoute}. ` +
+      `The app must have at least one record with an upload action. ` +
+      `Seed the app with test data before running the suite.`
+    );
+  }
+
   await uploadLink.click();
   await page.getByRole('heading', { name: /upload/i }).waitFor();
 }

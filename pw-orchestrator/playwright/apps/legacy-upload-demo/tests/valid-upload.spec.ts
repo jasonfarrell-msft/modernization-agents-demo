@@ -39,6 +39,6 @@ test.describe('Valid Upload', () => {
 
     await page.waitForURL(detailsPagePattern());
     const docsTable = page.locator('table').filter({ hasText: 'File' });
-    await expect(docsTable.getByText(fileName)).toBeVisible();
+    await expect(docsTable.getByRole('cell', { name: fileName })).toBeVisible();
   });
 });

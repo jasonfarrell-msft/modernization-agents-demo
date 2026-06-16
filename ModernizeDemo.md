@@ -126,6 +126,61 @@ Use the GitHub Modernization Agent to produce modernization changes and deployme
 
 Before running modernize-dotnet, establish pattern reference files that align modernization with customer standards.
 
+#### Step 1: Extract patterns from dotnet-patterns into reference documents
+
+Use GitHub Copilot to read the `dotnet-patterns/` folder and generate two files:
+- `MODERNIZATION_PATTERNS.md` — consolidated reference of all patterns
+- `AGENTS.md` — agent instructions that reference the patterns
+
+Use this prompt in Copilot Chat:
+
+```text
+Read the entire dotnet-patterns folder and consolidate all patterns into two files:
+
+1. MODERNIZATION_PATTERNS.md
+   - One comprehensive reference document
+   - Include all pattern READMEs (managed-identity, dependency-injection, error-handling-resilience, observability-diagnostics, class-separation-srp, naming-conventions)
+   - For each pattern: include the README content + key code examples from the examples/ folder
+   - Add a brief intro explaining these are customer standards
+   - Format for easy agent reference (headings, bullets, code blocks)
+
+2. AGENTS.md
+   - Create with this structure:
+     ---
+     name: Modernization Standards
+     description: Customer-aligned patterns for .NET modernization
+     ---
+     ## When Modernizing .NET Projects
+     Reference MODERNIZATION_PATTERNS.md for:
+     - Managed Identity patterns (authentication/authorization)
+     - Dependency Injection configuration and lifecycle management
+     - Error Handling & Resilience (circuits, retries, idempotent commands, ProblemDetails)
+     - Observability & Diagnostics (structured logging, correlation IDs, request context)
+     - Class Separation & SRP (single responsibility, cohesion)
+     - Naming Conventions (casing, clarity, legacy vs modern)
+     
+     ## Required Pattern Application
+     Modernization agents MUST:
+     - Read MODERNIZATION_PATTERNS.md before planning
+     - Apply managed-identity patterns to remove hardcoded credentials
+     - Apply DI patterns to configuration, middleware, and service setup
+     - Apply error-handling patterns to middleware, command handlers, and APIs
+     - Apply observability patterns to logging, diagnostics, and tracing
+     - Apply SRP improvements to refactored classes
+     - Apply naming conventions during modernization
+     - Cite which patterns were applied during implementation
+   - Stop. Do not execute. Return only the files created.
+
+Execution constraints:
+- Create files in the repository root only
+- Do not modify existing files
+- Do not commit to git; these files will be added to .gitignore
+```
+
+After Copilot finishes, confirm both files exist:
+- [ ] `MODERNIZATION_PATTERNS.md` created
+- [ ] `AGENTS.md` created
+
 ### 1. Set modernization target and constraints
 
 Target state:

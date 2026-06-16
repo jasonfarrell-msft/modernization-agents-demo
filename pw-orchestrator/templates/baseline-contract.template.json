@@ -8,7 +8,21 @@
   "constraints": {
     "baselineOnly": true,
     "noModernizationChanges": true,
-    "humanApprovalRequired": true
+    "humanApprovalRequired": true,
+    "generateOnly": true,
+    "executionForbiddenAtGeneration": true,
+    "allowedGeneratedPaths": [
+      "pw-orchestrator/playwright/**"
+    ],
+    "forbiddenCommandsAtGeneration": [
+      "npx playwright test",
+      "npm test",
+      "npm run test",
+      "pnpm test",
+      "yarn test",
+      "dotnet test",
+      "pytest"
+    ]
   },
   "discoveredSettings": {
     "allowedUploadExtensions": "{{ALLOWED_EXTENSIONS}}",
@@ -23,9 +37,53 @@
     "missing-file",
     "oversized-file"
   ],
-  "execution": {
+  "reliabilityRequirements": {
+    "strictModeSafeSelectors": {
+      "required": true,
+      "notes": "Do not use broad filename text locators that can match both success alert and documents row."
+    },
+    "targetDiscovery": {
+      "required": true,
+      "notes": "Discover upload target via user-visible navigation. Do not hard-code outage ids or exact form action URLs."
+    },
+    "uniqueArtifacts": {
+      "required": true,
+      "notes": "Generate unique filenames per scenario to avoid cross-run collisions and strict-mode ambiguity."
+    },
+    "selfContainedUploadPayloads": {
+      "required": true,
+      "notes": "Use in-memory payload generation; do not require external fixture files."
+    },
+    "oversizedFailureTolerance": {
+      "required": true,
+      "acceptedOutcomes": [
+        "upload-page-validation-or-error",
+        "details-or-error-page-visible-failure",
+        "request-level-rejection-with-detectable-failure-signal"
+      ],
+      "requiredSignals": {
+        "atLeastOne": [
+          "maximum-size-or-25mb-style-message",
+          "request-entity-too-large-style-message",
+          "http-4xx-or-5xx-upload-response"
+        ]
+      }
+    },
+    "assertionOrder": {
+      "required": true,
+      "notes": "Failure signal assertions must run before page/form-specific structure assertions."
+    }
+  },
+  "generationOutput": {
     "status": "pending",
-    "playwrightCommand": "npx playwright test",
+    "testsGenerated": [],
+    "matrixComplete": false,
+    "coverageIntentComplete": false
+  },
+  "execution": {
+    "status": "not-run",
+    "reason": "generate-only",
+    "command": "",
     "artifacts": {
       "htmlReport": "",
       "traceFiles": [],

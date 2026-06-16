@@ -185,10 +185,13 @@ cat > "${RUN_DIR}/runbook.sh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "1) Send the prompt in operator-prompt.txt to your Playwright Orchestrator custom agent."
-echo "2) Generate only. Do not run tests from the prompt."
-echo "3) Review generated tests under pw-orchestrator/playwright."
-echo "4) Keep generation output only: scenario matrix (targeted app areas), test file list, coverage intent."
+echo "1) Send operator-prompt.txt to your Playwright Orchestrator custom agent."
+echo "2) Generate only. Do not run Playwright, npm scripts, or shell test commands."
+echo "3) Keep output under pw-orchestrator/playwright only."
+echo "4) Enforce strict-mode-safe selectors (no ambiguous filename getByText assertions)."
+echo "5) Enforce oversized upload tolerance for inline validation, redirect failure surfaces, and request-level rejection."
+echo "6) Require failure-signal-first assertion order before page-structure checks."
+echo "7) Pause for human review before any execution."
 EOF
 chmod +x "${RUN_DIR}/runbook.sh"
 

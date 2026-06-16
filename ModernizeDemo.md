@@ -270,7 +270,7 @@ Ensure the client standards sources are available to the agent before running an
 ```bash
 dotnet build mcp-servers/dotnet-patterns-mcp/PatternsMcp.Server.csproj
 PATTERNS_PATH=/Users/jasonfarrell/Projects/modernization-demo/dotnet-patterns \
-dotnet run --project mcp-servers/dotnet-patterns-mcp --no-build -c Release
+dotnet run --project mcp-servers/dotnet-patterns-mcp --no-build
 ```
 
 2. Ensure the **improve** skill exists at user scope so it is available across projects (no git clone path):

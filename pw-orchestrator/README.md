@@ -36,7 +36,10 @@ Override the app URL:
 ## Options
 
 ```
---app-url URL         Target application URL
+--app-url URL         Target application URL (running instance)
+--app-source PATH     Path to the app source directory (absolute or relative
+                      to repo root). Used by the discovery stage to extract
+                      config signals. Default: legacy-upload-demo/OgeFieldOps.Web
 --regenerate          Force Copilot to regenerate tests
 --skip-install        Skip npm install and browser download
 --headed              Run tests in headed mode (visible browser)

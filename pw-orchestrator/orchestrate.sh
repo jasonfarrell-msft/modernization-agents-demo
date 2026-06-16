@@ -11,7 +11,10 @@ set -euo pipefail
 #   ./pw-orchestrator/orchestrate.sh [options]
 #
 # Options:
-#   --app-url URL         Override the target app URL
+#   --app-url URL         Target app URL (running instance)
+#   --app-source PATH     Path to the app source directory (absolute or
+#                         relative to repo root). Used for discovery.
+#                         Default: legacy-upload-demo/OgeFieldOps.Web
 #   --regenerate          Force test regeneration via Copilot coding agent
 #   --skip-install        Skip npm install and browser download
 #   --headed              Run tests in headed mode
@@ -35,16 +38,22 @@ usage() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --app-url)     APP_URL="${2:?Missing value for --app-url}"; shift 2 ;;
-    --regenerate)  REGENERATE=true; shift ;;
+    --app-url)      APP_URL="${2:?Missing value for --app-url}"; shift 2 ;;
+    --app-source)   TARGET_APP_REL="${2:?Missing value for --app-source}"; shift 2 ;;
+    --regenerate)   REGENERATE=true; shift ;;
     --skip-install) SKIP_INSTALL=true; shift ;;
-    --headed)      HEADED="--headed"; shift ;;
-    --help|-h)     usage; exit 0 ;;
-    *)             echo "Unknown flag: $1" >&2; exit 1 ;;
+    --headed)       HEADED="--headed"; shift ;;
+    --help|-h)      usage; exit 0 ;;
+    *)              echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
-TARGET_APP_DIR="${REPO_ROOT}/${TARGET_APP_REL}"
+# Resolve app source: support absolute paths or paths relative to repo root
+if [[ "${TARGET_APP_REL}" == /* ]]; then
+  TARGET_APP_DIR="${TARGET_APP_REL}"
+else
+  TARGET_APP_DIR="${REPO_ROOT}/${TARGET_APP_REL}"
+fi
 
 ###############################################################################
 # Stage 1: DISCOVER

@@ -12,6 +12,7 @@ Constraints:
 - Prefer resilient selectors and fallback checks for visible failure signals.
 
 Non-negotiable generation quality rules (must be encoded in generated tests):
+- Do NOT add test.skip() guards, environment variable checks, or execution blockers to generated tests.
 - Generate deterministic selectors that do not trigger Playwright strict-mode ambiguity.
 - For filename verification after successful upload, do not use a broad text locator that can match both flash alert and document row.
 - Prefer role/semantic locators and scope file assertions to the documents table row/cell.
@@ -46,7 +47,7 @@ Required workflow:
    - request-level oversize detection fallback
    - dynamic upload target discovery (no fixed outage id)
    - unique filename generation
-7. Stop after generation. Do not run tests.
+7. Stop after generation. Tests will be executed post-review by running `npm test` from the pw-orchestrator/playwright folder.
 8. Pause for human review.
 
 Required output:

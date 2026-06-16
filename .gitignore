@@ -494,3 +494,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Generated modernization pattern files (temporary references, not committed)
+MODERNIZATION_PATTERNS.md
+AGENTS.md

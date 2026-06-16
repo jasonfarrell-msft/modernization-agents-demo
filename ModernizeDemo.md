@@ -93,6 +93,82 @@ npx playwright install
 
 Use the GitHub Modernization Agent to produce modernization changes and deployment artifacts with a container as the end state.
 
+**IMPORTANT:** This section uses customer pattern standards extracted from `dotnet-patterns/` to guide modernization. These generated pattern files are NOT tracked by git.
+
+### 0. Extract customer patterns and create modernization standards
+
+Before running modernize-dotnet, establish pattern reference files that align modernization with customer standards.
+
+#### Step 1: Extract patterns from dotnet-patterns into reference documents
+
+Use GitHub Copilot to read the `dotnet-patterns/` folder and generate two files:
+- `MODERNIZATION_PATTERNS.md` — consolidated reference of all patterns
+- `AGENTS.md` — agent instructions that reference the patterns
+
+Use this prompt in Copilot Chat:
+
+```text
+Read the entire dotnet-patterns folder and consolidate all patterns into two files:
+
+1. MODERNIZATION_PATTERNS.md
+   - One comprehensive reference document
+   - Include all pattern READMEs (managed-identity, dependency-injection, error-handling-resilience, observability-diagnostics, class-separation-srp, naming-conventions)
+   - For each pattern: include the README content + key code examples from the examples/ folder
+   - Add a brief intro explaining these are customer standards
+   - Format for easy agent reference (headings, bullets, code blocks)
+
+2. AGENTS.md
+   - Create with this structure:
+     ---
+     name: Modernization Standards
+     description: Customer-aligned patterns for .NET modernization
+     ---
+     ## When Modernizing .NET Projects
+     Reference MODERNIZATION_PATTERNS.md for:
+     - Managed Identity patterns (authentication/authorization)
+     - Dependency Injection configuration and lifecycle management
+     - Error Handling & Resilience (circuits, retries, idempotent commands, ProblemDetails)
+     - Observability & Diagnostics (structured logging, correlation IDs, request context)
+     - Class Separation & SRP (single responsibility, cohesion)
+     - Naming Conventions (casing, clarity, legacy vs modern)
+     
+     ## Required Pattern Application
+     Modernization agents MUST:
+     - Read MODERNIZATION_PATTERNS.md before planning
+     - Apply managed-identity patterns to remove hardcoded credentials
+     - Apply DI patterns to configuration, middleware, and service setup
+     - Apply error-handling patterns to middleware, command handlers, and APIs
+     - Apply observability patterns to logging, diagnostics, and tracing
+     - Apply SRP improvements to refactored classes
+     - Apply naming conventions during modernization
+     - Cite which patterns were applied during implementation
+   - Stop. Do not execute. Return only the files created.
+
+Execution constraints:
+- Create files in the repository root only
+- Do not modify existing files
+- Do not commit to git; these files will be added to .gitignore
+```
+
+After Copilot finishes, confirm both files exist:
+- [ ] `MODERNIZATION_PATTERNS.md` created
+- [ ] `AGENTS.md` created
+
+#### Step 2: Exclude generated pattern files from git tracking
+
+Add these files to `.gitignore` so they are never committed:
+
+```bash
+echo -e "\n# Generated modernization pattern files (temporary references)\nMODERNIZATION_PATTERNS.md\nAGENTS.md" >> .gitignore
+```
+
+Verify:
+```bash
+git status | grep -E "MODERNIZATION_PATTERNS|AGENTS.md"
+```
+
+Expected: both files appear as untracked.
+
 ### 1. Set modernization target and constraints
 
 Target state:
@@ -116,12 +192,19 @@ Security and platform requirements:
 - [ ] HTTPS-only runtime settings.
 - [ ] Stateless app behavior compatible with horizontal scaling in containers.
 
-### 2. Send modernization prompt to the GitHub Modernization Agent
+### 2. Send modernization prompt to the GitHub Modernization Agent (modernize-dotnet)
 
-Use this prompt:
+**Prerequisites:**
+- [ ] `MODERNIZATION_PATTERNS.md` exists in repo root
+- [ ] `AGENTS.md` exists in repo root
+- [ ] Both files are listed in `.gitignore`
+
+Use this prompt in VS Code with the modernize-dotnet agent:
 
 ```text
-Modernize legacy-upload-demo into a containerized .NET 10 application for Azure deployment.
+Modernize legacy-upload-demo into a containerized .NET 10 application for Azure deployment using customer pattern standards.
+
+Reference MODERNIZATION_PATTERNS.md and AGENTS.md from the repository root for all design decisions.
 
 Execution mode (non-negotiable):
 - Demo speed mode: prioritize execution speed over process overhead.
@@ -131,12 +214,20 @@ Execution mode (non-negotiable):
 - No exploratory loops or optional review-agent passes unless explicitly requested.
 
 Scope and safety:
-- Create all modernization implementation in a new sibling directory: legacy-upload-demo-container
+- Create all modernization implementation in a new sibling directory: legacy-upload-demo-modernized
 - Do not modify files under the existing legacy-upload-demo application tree.
 - Keep user-visible behavior aligned with the Playwright baseline contract.
+- Pattern compliance is MANDATORY, not optional (see AGENTS.md and MODERNIZATION_PATTERNS.md)
 
 Technical requirements:
 - Target .NET 10.
+- Apply patterns from MODERNIZATION_PATTERNS.md for:
+  - Managed Identity (remove all hardcoded secrets/credentials)
+  - Dependency Injection (externalize configuration, apply DI principles)
+  - Error Handling & Resilience (middleware, circuit breakers, retry policies)
+  - Observability & Diagnostics (structured logging, correlation IDs, request tracing)
+  - Class Separation & SRP (refactor for single responsibility)
+  - Naming Conventions (apply customer standards)
 - Replace legacy persistence patterns with cloud-native equivalents:
   - local file upload storage -> object storage abstraction
   - on-prem SQL access -> managed cloud database access
@@ -148,10 +239,11 @@ Technical requirements:
 - Produce Bicep deployment artifacts for Azure Container Apps targeting a specified resource group.
 
 Output only:
-1) Change plan (implementation-focused, no exploratory alternatives)
-2) File-by-file modifications
+1) Change plan (implementation-focused, no exploratory alternatives, with pattern citations)
+2) File-by-file modifications (with pattern category applied)
 3) Infrastructure/runtime config changes needed for container and ACA deployment
-4) Risks and manual follow-up items
+4) Pattern application summary (which patterns were applied where)
+5) Risks and manual follow-up items
 ```
 
 ### 3. Review generated modernization output before applying
@@ -162,18 +254,21 @@ Confirm:
 - [ ] Persistence replacements are explicitly mapped (old -> new).
 - [ ] Containerization artifacts are present.
 - [ ] ACA deployment artifacts are called out.
-- [ ] Local run instructions exist for `legacy-upload-demo-container`.
+- [ ] Local run instructions exist for `legacy-upload-demo-modernized`.
 - [ ] Carried-forward Playwright tests can target a local base URL for the modernized app.
 - [ ] No plaintext secrets are introduced.
 - [ ] Baseline behavior compatibility is called out.
+- [ ] Pattern application is cited (managed-identity, DI, error-handling, observability, SRP, naming-conventions).
+- [ ] All patterns from MODERNIZATION_PATTERNS.md were reviewed before design decisions.
 
 ### 4. Apply generated changes and validate against baseline
 
 1. Apply the generated modernization changes.
-2. Start `legacy-upload-demo-container` locally.
+2. Start `legacy-upload-demo-modernized` locally.
 3. Run the carried-forward Playwright baseline tests against the local modernized app URL.
 4. Record pass/fail and gaps.
 5. Keep remediation items separate from this section's generated output.
+6. Verify pattern application in code changes (DI, Managed Identity, error handling, observability, SRP, naming conventions).
 
 ## Section 2b: Custom Agent Modernization
 

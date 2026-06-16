@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { navigateToUploadPage } from '../helpers/upload-helpers';
+import { navigateToUploadPage } from '../app-helpers';
 
 test.describe('Upload Form', () => {
   test('upload form renders with expected elements', async ({ page }) => {
@@ -13,7 +13,6 @@ test.describe('Upload Form', () => {
 
   test('upload form shows outage ticket number', async ({ page }) => {
     await navigateToUploadPage(page);
-    // The page should display the outage ticket reference (e.g. "Outage OUT-2026-0001")
     await expect(page.getByText(/Outage\s+OUT-\d{4}-\d+/i)).toBeVisible();
   });
 });

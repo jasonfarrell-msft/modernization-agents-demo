@@ -4,9 +4,10 @@ import * as path from 'path';
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const baseURL = process.env.APP_URL || 'https://vm-legacy-swc.swedencentral.cloudapp.azure.com/';
+const appName = process.env.APP_NAME || 'legacy-upload-demo';
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: `./apps/${appName}/tests`,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,

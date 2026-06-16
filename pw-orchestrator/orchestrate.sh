@@ -15,6 +15,10 @@ set -euo pipefail
 #   --app-source PATH     Path to the app source directory (absolute or
 #                         relative to repo root). Used for discovery.
 #                         Default: legacy-upload-demo/OgeFieldOps.Web
+#   --app NAME            App test suite to run (matches folder name under
+#                         playwright/apps/). Default: legacy-upload-demo
+#   --adapter NAME        Discovery adapter to use. Available adapters are
+#                         in the adapters/ directory. Default: aspnet-mvc
 #   --regenerate          Force test regeneration via Copilot coding agent
 #   --skip-install        Skip npm install and browser download
 #   --headed              Run tests in headed mode
@@ -26,6 +30,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PLAYWRIGHT_DIR="${SCRIPT_DIR}/playwright"
 RESULTS_DIR="${SCRIPT_DIR}/results"
 TARGET_APP_REL="legacy-upload-demo/OgeFieldOps.Web"
+APP_NAME="legacy-upload-demo"
+ADAPTER="aspnet-mvc"
 
 APP_URL="https://vm-legacy-swc.swedencentral.cloudapp.azure.com/"
 REGENERATE=false
@@ -40,6 +46,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --app-url)      APP_URL="${2:?Missing value for --app-url}"; shift 2 ;;
     --app-source)   TARGET_APP_REL="${2:?Missing value for --app-source}"; shift 2 ;;
+    --app)          APP_NAME="${2:?Missing value for --app}"; shift 2 ;;
+    --adapter)      ADAPTER="${2:?Missing value for --adapter}"; shift 2 ;;
     --regenerate)   REGENERATE=true; shift ;;
     --skip-install) SKIP_INSTALL=true; shift ;;
     --headed)       HEADED="--headed"; shift ;;
@@ -55,6 +63,26 @@ else
   TARGET_APP_DIR="${REPO_ROOT}/${TARGET_APP_REL}"
 fi
 
+# Validate app test suite exists
+APP_TEST_DIR="${PLAYWRIGHT_DIR}/apps/${APP_NAME}"
+if [[ ! -d "${APP_TEST_DIR}" ]]; then
+  echo "ERROR: No test suite found for app '${APP_NAME}'" >&2
+  echo "  Expected: ${APP_TEST_DIR}" >&2
+  echo "  Available apps:" >&2
+  ls -1 "${PLAYWRIGHT_DIR}/apps/" 2>/dev/null | sed 's/^/    /' >&2
+  exit 1
+fi
+
+# Validate adapter exists
+ADAPTER_SCRIPT="${SCRIPT_DIR}/adapters/${ADAPTER}.sh"
+if [[ ! -f "${ADAPTER_SCRIPT}" ]]; then
+  echo "ERROR: No discovery adapter found for '${ADAPTER}'" >&2
+  echo "  Expected: ${ADAPTER_SCRIPT}" >&2
+  echo "  Available adapters:" >&2
+  ls -1 "${SCRIPT_DIR}/adapters/" 2>/dev/null | sed 's/\.sh$//; s/^/    /' >&2
+  exit 1
+fi
+
 ###############################################################################
 # Stage 1: DISCOVER
 ###############################################################################
@@ -62,29 +90,53 @@ echo ""
 echo "══════════════════════════════════════════════════════════════════════════"
 echo "  Stage 1/6: DISCOVER — extracting app signals from source"
 echo "══════════════════════════════════════════════════════════════════════════"
+echo "  Adapter:    ${ADAPTER}"
+echo "  App source: ${TARGET_APP_DIR}"
+echo ""
 
-WEB_CONFIG="${TARGET_APP_DIR}/Web.config"
-CONTROLLER="${TARGET_APP_DIR}/Controllers/OutagesController.cs"
-
-if [[ ! -f "${WEB_CONFIG}" ]]; then
-  echo "ERROR: Web.config not found at ${WEB_CONFIG}" >&2
+if [[ ! -d "${TARGET_APP_DIR}" ]]; then
+  echo "ERROR: App source directory not found: ${TARGET_APP_DIR}" >&2
   exit 1
 fi
 
-allowed_extensions="$(sed -n 's/.*key="AllowedUploadExtensions" value="\([^"]*\)".*/\1/p' "${WEB_CONFIG}" | head -n1)"
-max_upload_mb="$(sed -n 's/.*key="MaxUploadSizeMb" value="\([^"]*\)".*/\1/p' "${WEB_CONFIG}" | head -n1)"
-validation_error="$(sed -n 's/.*ModelState.AddModelError("", "\(.*\)").*/\1/p' "${CONTROLLER}" | head -n1)"
-upload_route="/Outages/Upload/{id}"
+# Run adapter — it outputs KEY=VALUE pairs to stdout, logs to stderr
+DISCOVERED_VARS="$(bash "${ADAPTER_SCRIPT}" "${TARGET_APP_DIR}" 2>&1 1>/dev/null || true)"
+DISCOVERED_ENV="$(bash "${ADAPTER_SCRIPT}" "${TARGET_APP_DIR}" 2>/dev/null || true)"
 
-: "${allowed_extensions:=.pdf,.csv,.txt,.jpg,.jpeg,.png,.xlsx}"
-: "${max_upload_mb:=25}"
-: "${validation_error:=Please choose a file to upload.}"
+# Print adapter log (sent to stderr, captured above)
+echo "${DISCOVERED_VARS}"
 
-echo "  App URL:            ${APP_URL}"
-echo "  Upload route:       ${upload_route}"
-echo "  Allowed extensions: ${allowed_extensions}"
-echo "  Max upload (MB):    ${max_upload_mb}"
-echo "  Validation message: ${validation_error}"
+# Parse discovered values, apply defaults for anything not found
+allowed_extensions="$(echo "${DISCOVERED_ENV}" | sed -n 's/^ALLOWED_EXTENSIONS=//p' | head -n1)"
+max_upload_mb="$(echo "${DISCOVERED_ENV}" | sed -n 's/^MAX_UPLOAD_MB=//p' | head -n1)"
+validation_error="$(echo "${DISCOVERED_ENV}" | sed -n 's/^VALIDATION_ERROR=//p' | head -n1)"
+upload_route="$(echo "${DISCOVERED_ENV}" | sed -n 's/^UPLOAD_ROUTE=//p' | head -n1)"
+
+# Apply defaults and report which values are discovered vs defaulted
+echo ""
+apply_default() {
+  local key="$1" value="$2" default="$3"
+  if [[ -z "${value}" ]]; then
+    echo "  ⚠ ${key}: using default (${default})"
+    printf '%s' "${default}"
+  else
+    printf '%s' "${value}"
+  fi
+}
+
+allowed_extensions="$(apply_default "ALLOWED_EXTENSIONS" "${allowed_extensions}" ".pdf,.csv,.txt,.jpg,.jpeg,.png,.xlsx")"
+max_upload_mb="$(apply_default "MAX_UPLOAD_MB" "${max_upload_mb}" "25")"
+validation_error="$(apply_default "VALIDATION_ERROR" "${validation_error}" "Please choose a file to upload.")"
+upload_route="$(apply_default "UPLOAD_ROUTE" "${upload_route}" "/Upload/{id}")"
+
+echo ""
+echo "  Final configuration:"
+echo "    App URL:            ${APP_URL}"
+echo "    App name:           ${APP_NAME}"
+echo "    Upload route:       ${upload_route}"
+echo "    Allowed extensions: ${allowed_extensions}"
+echo "    Max upload (MB):    ${max_upload_mb}"
+echo "    Validation message: ${validation_error}"
 
 ###############################################################################
 # Stage 2: CONFIGURE
@@ -96,6 +148,7 @@ echo "════════════════════════�
 
 cat > "${PLAYWRIGHT_DIR}/.env" <<EOF
 APP_URL=${APP_URL}
+APP_NAME=${APP_NAME}
 UPLOAD_ROUTE=${upload_route}
 ALLOWED_EXTENSIONS=${allowed_extensions}
 MAX_UPLOAD_MB=${max_upload_mb}

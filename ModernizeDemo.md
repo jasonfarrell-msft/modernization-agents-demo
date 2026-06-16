@@ -181,29 +181,6 @@ After Copilot finishes, confirm both files exist:
 - [ ] `MODERNIZATION_PATTERNS.md` created
 - [ ] `AGENTS.md` created
 
-### 1. Set modernization target and constraints
-
-Target state:
-
-- [ ] Application targets **.NET 10**.
-- [ ] Application is packaged as a **container** suitable for Azure deployment.
-- [ ] Legacy persistence services are replaced with modern equivalents.
-- [ ] Deployment artifacts exist for **Azure Container Apps (ACA)** in a chosen resource group.
-
-Persistence modernization requirements:
-
-- [ ] Server-local file storage -> Azure Blob Storage (or equivalent object storage abstraction).
-- [ ] On-prem SQL persistence -> Azure SQL-compatible managed persistence with secure connectivity.
-- [ ] SMTP pickup/drop folders -> managed messaging/notification service integration.
-- [ ] Local file-based audit/log persistence -> structured app telemetry + centralized logging.
-
-Security and platform requirements:
-
-- [ ] Managed Identity first; no hardcoded secrets.
-- [ ] Secrets/config from secure store and environment-based configuration.
-- [ ] HTTPS-only runtime settings.
-- [ ] Stateless app behavior compatible with horizontal scaling in containers.
-
 ### 2. Send modernization prompt to the GitHub Modernization Agent (modernize-dotnet)
 
 **Prerequisites:**

@@ -3,8 +3,11 @@ import * as path from 'path';
 
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
-const baseURL = process.env.APP_URL || 'https://vm-legacy-swc.swedencentral.cloudapp.azure.com/';
-const appName = process.env.APP_NAME || 'legacy-upload-demo';
+const baseURL = process.env.APP_URL;
+const appName = process.env.APP_NAME;
+
+if (!baseURL) throw new Error('APP_URL not set — run via orchestrate.sh or create .env');
+if (!appName) throw new Error('APP_NAME not set — run via orchestrate.sh or create .env');
 
 export default defineConfig({
   testDir: `./apps/${appName}/tests`,

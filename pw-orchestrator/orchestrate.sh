@@ -11,14 +11,13 @@ set -euo pipefail
 #   ./pw-orchestrator/orchestrate.sh [options]
 #
 # Options:
-#   --app-url URL         Target app URL (running instance)
+#   --app-url URL         Target app URL (running instance) [required]
 #   --app-source PATH     Path to the app source directory (absolute or
-#                         relative to repo root). Used for discovery.
-#                         Default: legacy-upload-demo/OgeFieldOps.Web
+#                         relative to repo root). Used for discovery. [required]
 #   --app NAME            App test suite to run (matches folder name under
-#                         playwright/apps/). Default: legacy-upload-demo
+#                         playwright/apps/) [required]
 #   --adapter NAME        Discovery adapter to use. Available adapters are
-#                         in the adapters/ directory. Default: aspnet-mvc
+#                         in the adapters/ directory. [required]
 #   --regenerate          Force test regeneration via Copilot coding agent
 #   --skip-install        Skip npm install and browser download
 #   --headed              Run tests in headed mode
@@ -29,11 +28,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PLAYWRIGHT_DIR="${SCRIPT_DIR}/playwright"
 RESULTS_DIR="${SCRIPT_DIR}/results"
-TARGET_APP_REL="legacy-upload-demo/OgeFieldOps.Web"
-APP_NAME="legacy-upload-demo"
-ADAPTER="aspnet-mvc"
+TARGET_APP_REL=""
+APP_NAME=""
+ADAPTER=""
 
-APP_URL="https://vm-legacy-swc.swedencentral.cloudapp.azure.com/"
+APP_URL=""
 REGENERATE=false
 SKIP_INSTALL=false
 HEADED=""
@@ -55,6 +54,24 @@ while [[ $# -gt 0 ]]; do
     *)              echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
+
+# Validate required flags
+required_flags=()
+[[ -z "${APP_URL}" ]] && required_flags+=("--app-url")
+[[ -z "${APP_NAME}" ]] && required_flags+=("--app")
+[[ -z "${ADAPTER}" ]] && required_flags+=("--adapter")
+[[ -z "${TARGET_APP_REL}" ]] && required_flags+=("--app-source")
+if [[ ${#required_flags[@]} -gt 0 ]]; then
+  echo "ERROR: Missing required flags: ${required_flags[*]}" >&2
+  echo "  Run with --help for usage." >&2
+  exit 1
+fi
+
+# Validate adapter name (prevent path traversal)
+if [[ ! "${ADAPTER}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  echo "ERROR: Invalid adapter name '${ADAPTER}'. Must be alphanumeric with hyphens/underscores." >&2
+  exit 1
+fi
 
 # Resolve app source: support absolute paths or paths relative to repo root
 if [[ "${TARGET_APP_REL}" == /* ]]; then
@@ -160,14 +177,26 @@ echo "════════════════════════�
 echo "  Stage 2/6: CONFIGURE — writing .env for Playwright"
 echo "══════════════════════════════════════════════════════════════════════════"
 
+# Escape a value for safe inclusion in a .env file (handles #, quotes, newlines)
+env_escape() {
+  local val="$1"
+  # If value contains special chars, wrap in double quotes and escape internal quotes
+  if printf '%s' "${val}" | grep -qE '[#"'"'"'\\[:space:]]'; then
+    val="$(printf '%s' "${val}" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+    printf '"%s"' "${val}"
+  else
+    printf '%s' "${val}"
+  fi
+}
+
 cat > "${PLAYWRIGHT_DIR}/.env" <<EOF
-APP_URL=${APP_URL}
-APP_NAME=${APP_NAME}
-LIST_ROUTE=${list_route}
-UPLOAD_ROUTE=${upload_route}
-ALLOWED_EXTENSIONS=${allowed_extensions}
-MAX_UPLOAD_MB=${max_upload_mb}
-VALIDATION_ERROR=${validation_error}
+APP_URL=$(env_escape "${APP_URL}")
+APP_NAME=$(env_escape "${APP_NAME}")
+LIST_ROUTE=$(env_escape "${list_route}")
+UPLOAD_ROUTE=$(env_escape "${upload_route}")
+ALLOWED_EXTENSIONS=$(env_escape "${allowed_extensions}")
+MAX_UPLOAD_MB=$(env_escape "${max_upload_mb}")
+VALIDATION_ERROR=$(env_escape "${validation_error}")
 EOF
 
 echo "  Written: ${PLAYWRIGHT_DIR}/.env"
@@ -180,22 +209,25 @@ echo "════════════════════════�
 echo "  Stage 3/6: GENERATE — check/create test suite"
 echo "══════════════════════════════════════════════════════════════════════════"
 
-TEST_COUNT="$(find "${PLAYWRIGHT_DIR}/tests" -name '*.spec.ts' 2>/dev/null | wc -l | tr -d ' ')"
+TEST_COUNT="$(find "${APP_TEST_DIR}/tests" -name '*.spec.ts' 2>/dev/null | wc -l | tr -d ' ')"
 
 if [[ "${REGENERATE}" == "true" ]]; then
   echo "  --regenerate requested. Invoking Copilot coding agent..."
 
-  GENERATION_PROMPT="Generate Playwright baseline tests for a legacy ASP.NET MVC upload app.
+  GENERATION_PROMPT="Generate Playwright baseline tests for a web application.
 Target: ${APP_URL}
+List route: ${list_route}
 Upload route: ${upload_route}
 Allowed extensions: ${allowed_extensions}
 Max upload MB: ${max_upload_mb}
 Validation error: ${validation_error}
 
 Requirements:
-- Tests under pw-orchestrator/playwright/tests/
-- Use helpers from helpers/upload-helpers.ts and helpers/discovery.ts
-- Dynamic upload target discovery via UI navigation (no hard-coded outage IDs)
+- Tests under pw-orchestrator/playwright/apps/${APP_NAME}/tests/
+- Use generic helpers from helpers/test-utils.ts (uniqueFilename, createFileBuffer, uploadFile, hasVisibleFailureSignal)
+- Use app-specific helpers from apps/${APP_NAME}/app-helpers.ts (navigateToUploadPage, uploadPagePattern, detailsPagePattern, hasAppFailureSignal)
+- Use discovered config from helpers/discovery.ts (getConfig) — never hardcode routes or validation messages
+- Dynamic upload target discovery via UI navigation (no hard-coded IDs)
 - Unique filenames per test to avoid cross-run collisions
 - In-memory file payloads (no external fixture files)
 - Oversized upload must accept multiple legacy failure paths
@@ -212,9 +244,8 @@ These rules prevent Playwright strict mode violations. Every generated test MUST
      const docsTable = page.locator('table').filter({ hasText: 'File' });
      await expect(docsTable.getByRole('cell', { name: fileName })).toBeVisible();
 
-2. NEVER use getByText(/outage/i) or other short generic patterns that match navigation
-   links, headings, AND content text simultaneously. Use specific patterns:
-     await expect(page.getByText(/Outage\s+OUT-\d{4}-\d+/i)).toBeVisible();
+2. NEVER use short generic text patterns that match navigation links, headings, AND content
+   text simultaneously. Use specific patterns unique to the content area.
 
 3. Every locator MUST resolve to exactly one element. If a locator could match multiple
    elements, scope it using .locator().filter(), getByRole() with name, or chain locators
@@ -227,15 +258,16 @@ These rules prevent Playwright strict mode violations. Every generated test MUST
 5. After a successful upload, assert against the documents table cell, NOT the flash alert.
    The flash alert is transient and also contains the filename, causing ambiguity.
 
-6. For error assertions, use hasVisibleFailureSignal() from helpers/upload-helpers.ts
-   which checks multiple error surfaces with proper timeout handling."
+6. For error assertions, use hasVisibleFailureSignal() from helpers/test-utils.ts and
+   hasAppFailureSignal() from apps/${APP_NAME}/app-helpers.ts — they check multiple error
+   surfaces with proper timeout handling."
 
   if command -v gh &>/dev/null; then
     REPO_NAME="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo '')"
     if [[ -n "${REPO_NAME}" ]]; then
       ISSUE_URL="$(gh issue create \
         --repo "${REPO_NAME}" \
-        --title "Generate Playwright baseline tests for legacy-upload-demo" \
+        --title "Generate Playwright baseline tests for ${APP_NAME}" \
         --body "${GENERATION_PROMPT}" \
         --label "copilot" 2>/dev/null || echo '')"
 

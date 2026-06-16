@@ -126,14 +126,41 @@ Validation error: ${validation_error}
 
 Requirements:
 - Tests under pw-orchestrator/playwright/tests/
-- Use role/semantic locators (no brittle CSS selectors)
-- Dynamic upload target discovery via UI navigation
-- Unique filenames per test
-- In-memory file payloads (no fixture files)
-- Oversized upload must accept multiple failure paths
+- Use helpers from helpers/upload-helpers.ts and helpers/discovery.ts
+- Dynamic upload target discovery via UI navigation (no hard-coded outage IDs)
+- Unique filenames per test to avoid cross-run collisions
+- In-memory file payloads (no external fixture files)
+- Oversized upload must accept multiple legacy failure paths
 - Test isolation: each test is independent
 
-Scenarios: page-load, upload-form-renders, valid-upload, invalid-extension, missing-file, oversized-file"
+Scenarios: page-load, upload-form-renders, valid-upload, invalid-extension, missing-file, oversized-file
+
+STRICT-MODE RULES (non-negotiable):
+These rules prevent Playwright strict mode violations. Every generated test MUST follow them.
+
+1. NEVER use broad getByText() to verify a filename after upload. The filename appears in
+   BOTH the flash success alert AND the documents table cell, causing strict mode to fail.
+   Instead, scope to the documents table:
+     const docsTable = page.locator('table').filter({ hasText: 'File' });
+     await expect(docsTable.getByRole('cell', { name: fileName })).toBeVisible();
+
+2. NEVER use getByText(/outage/i) or other short generic patterns that match navigation
+   links, headings, AND content text simultaneously. Use specific patterns:
+     await expect(page.getByText(/Outage\s+OUT-\d{4}-\d+/i)).toBeVisible();
+
+3. Every locator MUST resolve to exactly one element. If a locator could match multiple
+   elements, scope it using .locator().filter(), getByRole() with name, or chain locators
+   to narrow to a specific container first.
+
+4. Prefer getByRole() and getByLabel() over getByText() for interactive elements.
+   Use getByText() only for non-interactive content, and always with patterns specific
+   enough to match a single element.
+
+5. After a successful upload, assert against the documents table cell, NOT the flash alert.
+   The flash alert is transient and also contains the filename, causing ambiguity.
+
+6. For error assertions, use hasVisibleFailureSignal() from helpers/upload-helpers.ts
+   which checks multiple error surfaces with proper timeout handling."
 
   if command -v gh &>/dev/null; then
     REPO_NAME="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo '')"

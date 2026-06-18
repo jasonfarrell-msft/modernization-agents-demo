@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <Authors>OgeFieldOps</Authors>
+    <Description>Shared observability middleware — correlation ID propagation.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ASP.NET Core types: HttpContext, RequestDelegate, ILogger<> -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

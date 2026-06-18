@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <Authors>OgeFieldOps</Authors>
+    <Description>Shared infrastructure health checks — Blob Storage and SQL connectivity.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ASP.NET Core shared framework: IHealthCheck, HealthCheckResult -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <!-- Azure Blob Storage SDK for BlobStorageHealthCheck -->
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
+    <!-- Data access abstractions — ISqlConnectionFactory -->
+    <!-- NOTE: OgeFieldOps.Core.Data must be packed to ../local-nuget before building this project -->
+    <PackageReference Include="OgeFieldOps.Core.Data" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>
